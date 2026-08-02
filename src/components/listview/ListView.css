@@ -1,0 +1,139 @@
+.listview-wrapper {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 2rem;
+}
+
+.listview-card {
+  background-color: #ffffff;
+  border-radius: 12px;
+  border: 1px solid #eef0f5;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  overflow: hidden;
+}
+
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.listview-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.875rem;
+}
+
+.listview-table th {
+  background-color: #ffffff;
+  color: #64748b;
+  font-weight: 700;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid #eef0f5;
+  white-space: nowrap;
+}
+
+.listview-table td {
+  padding: 1.25rem 1.5rem;
+  color: #1b1e3d;
+  font-weight: 500;
+  font-size: 0.875rem;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: middle;
+}
+
+.listview-table tbody tr {
+  transition: background-color var(--transition-fast);
+}
+
+.listview-table tbody tr:hover {
+  background-color: #f8fafc;
+}
+
+.listview-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Actions Column matching image */
+.actions-header {
+  text-align: right !important;
+  width: 100px;
+}
+
+.actions-cell {
+  text-align: right !important;
+}
+
+.action-buttons {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  background-color: #ffffff;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.edit-btn {
+  border: 1px solid #e2e8f0;
+  color: #475569;
+}
+
+.edit-btn:hover {
+  background-color: #f8fafc;
+  border-color: #cbd5e1;
+  color: #1b1e3d;
+}
+
+.delete-btn {
+  border: 1px solid #fecaca;
+  color: #ef4444;
+}
+
+.delete-btn:hover {
+  background-color: #fef2f2;
+  border-color: #f87171;
+  color: #dc2626;
+}
+
+/* Empty State */
+.empty-cell {
+  padding: 4rem 1.5rem !important;
+  text-align: center;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.empty-icon {
+  color: #94a3b8;
+  margin-bottom: 0.75rem;
+}
+
+.empty-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1b1e3d;
+  margin-bottom: 0.25rem;
+}
+
+.empty-subtitle {
+  font-size: 0.875rem;
+  color: #64748b;
+}

@@ -1,0 +1,78 @@
+import React, { useState } from 'react';
+import ListView from '../../components/listview/ListView';
+import FormView from '../../components/formview/FormView';
+import Modal from '../../components/common/Modal';
+import { initialItemCategories } from '../../services/mockData';
+
+export const ItemCategoryList = () => {
+  const [categories, setCategories] = useState(initialItemCategories);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingCategory, setEditingCategory] = useState(null);
+
+  const columns = [
+    { key: 'name', label: 'Category Name' },
+    { key: 'description', label: 'Description' },
+    { key: 'itemCount', label: 'Total Items' }
+  ];
+
+  const categoryFields = [
+    { name: 'name', label: 'Category Name', type: 'text', required: true, gridSpan: 12, placeholder: 'e.g. Hardware' },
+    { name: 'description', label: 'Description', type: 'textarea', gridSpan: 12, placeholder: 'Short category description...' }
+  ];
+
+  const handleNew = () => {
+    setEditingCategory(null);
+    setIsModalOpen(true);
+  };
+
+  const handleEdit = (row) => {
+    setEditingCategory(row);
+    setIsModalOpen(true);
+  };
+
+  const handleDelete = (row) => {
+    if (window.confirm(`Are you sure you want to delete category ${row.name}?`)) {
+      setCategories(prev => prev.filter(c => c.id !== row.id));
+    }
+  };
+
+  const handleSubmit = (formData) => {
+    if (editingCategory) {
+      setCategories(prev => prev.map(c => c.id === editingCategory.id ? { ...c, ...formData } : c));
+    } else {
+      setCategories(prev => [{ id: Date.now(), itemCount: 0, ...formData }, ...prev]);
+    }
+    setIsModalOpen(false);
+  };
+
+  return (
+    <div className="categories-page">
+      <ListView
+        title="Item Categories"
+        columns={columns}
+        data={categories}
+        onNew={handleNew}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+        searchPlaceholder="Search category..."
+        newButtonLabel="+ New Category"
+      />
+
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title={editingCategory ? "Edit Category" : "Create Item Category"}
+      >
+        <FormView
+          fields={categoryFields}
+          initialValues={editingCategory || {}}
+          onSubmit={handleSubmit}
+          onCancel={() => setIsModalOpen(false)}
+          saveLabel={editingCategory ? "Update Category" : "Save Category"}
+        />
+      </Modal>
+    </div>
+  );
+};
+
+export default ItemCategoryList;

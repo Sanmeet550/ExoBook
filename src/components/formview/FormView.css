@@ -1,0 +1,23 @@
+.formview-card {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.formview-header {
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 1.5rem;
+}
+
+.formview-header h2 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--primary);
+  margin: 0;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 0 1.25rem;
+}
