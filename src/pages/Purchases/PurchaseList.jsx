@@ -2,12 +2,12 @@ import React, { useState } from 'react';
 import ListView from '../../components/listview/ListView';
 import FormView from '../../components/formview/FormView';
 import Modal from '../../components/common/Modal';
-import { initialPurchases } from '../../services/mockData';
+import apiService from '../../services/api';
 
 export const PurchaseList = () => {
-  const [purchases, setPurchases] = useState(initialPurchases);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingPurchase, setEditingPurchase] = useState(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const columns = [
     { key: 'purchaseNo', label: 'Purchase Order No' },
@@ -43,27 +43,30 @@ export const PurchaseList = () => {
     setIsModalOpen(true);
   };
 
-  const handleDelete = (row) => {
+  const handleDelete = async (row) => {
     if (window.confirm(`Are you sure you want to delete purchase ${row.purchaseNo}?`)) {
-      setPurchases(prev => prev.filter(p => p.id !== row.id));
+      await apiService.delete('purchases', row.id);
+      setRefreshKey(k => k + 1);
     }
   };
 
-  const handleSubmit = (formData) => {
+  const handleSubmit = async (formData) => {
     if (editingPurchase) {
-      setPurchases(prev => prev.map(p => p.id === editingPurchase.id ? { ...p, ...formData } : p));
+      await apiService.update('purchases', editingPurchase.id, formData);
     } else {
-      setPurchases(prev => [{ id: Date.now(), ...formData }, ...prev]);
+      await apiService.create('purchases', formData);
     }
     setIsModalOpen(false);
+    setRefreshKey(k => k + 1);
   };
 
   return (
     <div className="purchases-page">
       <ListView
+        apiUrl="purchases"
+        refreshKey={refreshKey}
         title="Purchase Orders"
         columns={columns}
-        data={purchases}
         onNew={handleNew}
         onEdit={handleEdit}
         onDelete={handleDelete}

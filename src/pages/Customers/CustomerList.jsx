@@ -2,12 +2,12 @@ import React, { useState } from 'react';
 import ListView from '../../components/listview/ListView';
 import FormView from '../../components/formview/FormView';
 import Modal from '../../components/common/Modal';
-import { initialCustomers } from '../../services/mockData';
+import apiService from '../../services/api';
 
 export const CustomerList = () => {
-  const [customers, setCustomers] = useState(initialCustomers);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const columns = [
     { key: 'name', label: 'Name' },
@@ -35,28 +35,30 @@ export const CustomerList = () => {
     setIsModalOpen(true);
   };
 
-  const handleDelete = (customer) => {
+  const handleDelete = async (customer) => {
     if (window.confirm(`Are you sure you want to delete ${customer.name}?`)) {
-      setCustomers(prev => prev.filter(c => c.id !== customer.id));
+      await apiService.delete('customers', customer.id);
+      setRefreshKey(k => k + 1);
     }
   };
 
-  const handleSubmit = (formData) => {
+  const handleSubmit = async (formData) => {
     if (editingCustomer) {
-      setCustomers(prev => prev.map(c => c.id === editingCustomer.id ? { ...c, ...formData } : c));
+      await apiService.update('customers', editingCustomer.id, formData);
     } else {
-      const newCust = { id: Date.now(), ...formData };
-      setCustomers(prev => [newCust, ...prev]);
+      await apiService.create('customers', formData);
     }
     setIsModalOpen(false);
+    setRefreshKey(k => k + 1);
   };
 
   return (
     <div className="customers-page">
       <ListView
+        apiUrl="/customer/view/all"
+        refreshKey={refreshKey}
         title="Customers"
         columns={columns}
-        data={customers}
         onNew={handleNew}
         onEdit={handleEdit}
         onDelete={handleDelete}

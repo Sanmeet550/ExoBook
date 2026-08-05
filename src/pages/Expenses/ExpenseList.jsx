@@ -2,12 +2,12 @@ import React, { useState } from 'react';
 import ListView from '../../components/listview/ListView';
 import FormView from '../../components/formview/FormView';
 import Modal from '../../components/common/Modal';
-import { initialExpenses } from '../../services/mockData';
+import apiService from '../../services/api';
 
 export const ExpenseList = () => {
-  const [expenses, setExpenses] = useState(initialExpenses);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const columns = [
     { key: 'expenseNo', label: 'Expense No' },
@@ -35,27 +35,30 @@ export const ExpenseList = () => {
     setIsModalOpen(true);
   };
 
-  const handleDelete = (row) => {
+  const handleDelete = async (row) => {
     if (window.confirm(`Are you sure you want to delete expense ${row.expenseNo}?`)) {
-      setExpenses(prev => prev.filter(e => e.id !== row.id));
+      await apiService.delete('expenses', row.id);
+      setRefreshKey(k => k + 1);
     }
   };
 
-  const handleSubmit = (formData) => {
+  const handleSubmit = async (formData) => {
     if (editingExpense) {
-      setExpenses(prev => prev.map(e => e.id === editingExpense.id ? { ...e, ...formData } : e));
+      await apiService.update('expenses', editingExpense.id, formData);
     } else {
-      setExpenses(prev => [{ id: Date.now(), ...formData }, ...prev]);
+      await apiService.create('expenses', formData);
     }
     setIsModalOpen(false);
+    setRefreshKey(k => k + 1);
   };
 
   return (
     <div className="expenses-page">
       <ListView
+        apiUrl="expenses"
+        refreshKey={refreshKey}
         title="Business Expenses"
         columns={columns}
-        data={expenses}
         onNew={handleNew}
         onEdit={handleEdit}
         onDelete={handleDelete}

@@ -2,12 +2,12 @@ import React, { useState } from 'react';
 import ListView from '../../components/listview/ListView';
 import FormView from '../../components/formview/FormView';
 import Modal from '../../components/common/Modal';
-import { initialItems } from '../../services/mockData';
+import apiService from '../../services/api';
 
 export const ItemList = () => {
-  const [items, setItems] = useState(initialItems);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const columns = [
     { key: 'name', label: 'Item Name' },
@@ -37,27 +37,30 @@ export const ItemList = () => {
     setIsModalOpen(true);
   };
 
-  const handleDelete = (row) => {
+  const handleDelete = async (row) => {
     if (window.confirm(`Are you sure you want to delete item ${row.name}?`)) {
-      setItems(prev => prev.filter(i => i.id !== row.id));
+      await apiService.delete('items', row.id);
+      setRefreshKey(k => k + 1);
     }
   };
 
-  const handleSubmit = (formData) => {
+  const handleSubmit = async (formData) => {
     if (editingItem) {
-      setItems(prev => prev.map(i => i.id === editingItem.id ? { ...i, ...formData } : i));
+      await apiService.update('items', editingItem.id, formData);
     } else {
-      setItems(prev => [{ id: Date.now(), ...formData }, ...prev]);
+      await apiService.create('items', formData);
     }
     setIsModalOpen(false);
+    setRefreshKey(k => k + 1);
   };
 
   return (
     <div className="items-page">
       <ListView
+        apiUrl="items"
+        refreshKey={refreshKey}
         title="Items & Products"
         columns={columns}
-        data={items}
         onNew={handleNew}
         onEdit={handleEdit}
         onDelete={handleDelete}

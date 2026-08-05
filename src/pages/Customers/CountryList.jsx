@@ -2,12 +2,12 @@ import React, { useState } from 'react';
 import ListView from '../../components/listview/ListView';
 import FormView from '../../components/formview/FormView';
 import Modal from '../../components/common/Modal';
-import { initialCountries } from '../../services/mockData';
+import apiService from '../../services/api';
 
 export const CountryList = () => {
-  const [countries, setCountries] = useState(initialCountries);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCountry, setEditingCountry] = useState(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const columns = [
     { key: 'name', label: 'Country Name' },
@@ -31,27 +31,30 @@ export const CountryList = () => {
     setIsModalOpen(true);
   };
 
-  const handleDelete = (row) => {
+  const handleDelete = async (row) => {
     if (window.confirm(`Are you sure you want to delete ${row.name}?`)) {
-      setCountries(prev => prev.filter(c => c.id !== row.id));
+      await apiService.delete('country', row.id);
+      setRefreshKey(k => k + 1);
     }
   };
 
-  const handleSubmit = (formData) => {
+  const handleSubmit = async (formData) => {
     if (editingCountry) {
-      setCountries(prev => prev.map(c => c.id === editingCountry.id ? { ...c, ...formData } : c));
+      await apiService.update('country', editingCountry.id, formData);
     } else {
-      setCountries(prev => [{ id: Date.now(), ...formData }, ...prev]);
+      await apiService.create('country', formData);
     }
     setIsModalOpen(false);
+    setRefreshKey(k => k + 1);
   };
 
   return (
     <div className="countries-page">
       <ListView
+        apiUrl="/country/view/all"
+        refreshKey={refreshKey}
         title="Countries"
         columns={columns}
-        data={countries}
         onNew={handleNew}
         onEdit={handleEdit}
         onDelete={handleDelete}

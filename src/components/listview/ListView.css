@@ -137,3 +137,50 @@
   font-size: 0.875rem;
   color: #64748b;
 }
+
+/* Error State */
+.error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.error-icon {
+  color: #ef4444;
+  margin-bottom: 0.25rem;
+}
+
+.error-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1b1e3d;
+}
+
+.error-subtitle {
+  font-size: 0.875rem;
+  color: #64748b;
+  margin-bottom: 0.5rem;
+}
+
+.retry-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 1rem;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  color: #475569;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.retry-btn:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #1b1e3d;
+}

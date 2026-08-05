@@ -2,12 +2,12 @@ import React, { useState } from 'react';
 import ListView from '../../components/listview/ListView';
 import FormView from '../../components/formview/FormView';
 import Modal from '../../components/common/Modal';
-import { initialItemCategories } from '../../services/mockData';
+import apiService from '../../services/api';
 
 export const ItemCategoryList = () => {
-  const [categories, setCategories] = useState(initialItemCategories);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const columns = [
     { key: 'name', label: 'Category Name' },
@@ -30,27 +30,30 @@ export const ItemCategoryList = () => {
     setIsModalOpen(true);
   };
 
-  const handleDelete = (row) => {
+  const handleDelete = async (row) => {
     if (window.confirm(`Are you sure you want to delete category ${row.name}?`)) {
-      setCategories(prev => prev.filter(c => c.id !== row.id));
+      await apiService.delete('categories', row.id);
+      setRefreshKey(k => k + 1);
     }
   };
 
-  const handleSubmit = (formData) => {
+  const handleSubmit = async (formData) => {
     if (editingCategory) {
-      setCategories(prev => prev.map(c => c.id === editingCategory.id ? { ...c, ...formData } : c));
+      await apiService.update('categories', editingCategory.id, formData);
     } else {
-      setCategories(prev => [{ id: Date.now(), itemCount: 0, ...formData }, ...prev]);
+      await apiService.create('categories', { itemCount: 0, ...formData });
     }
     setIsModalOpen(false);
+    setRefreshKey(k => k + 1);
   };
 
   return (
     <div className="categories-page">
       <ListView
+        apiUrl="categories"
+        refreshKey={refreshKey}
         title="Item Categories"
         columns={columns}
-        data={categories}
         onNew={handleNew}
         onEdit={handleEdit}
         onDelete={handleDelete}
