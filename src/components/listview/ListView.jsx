@@ -59,7 +59,6 @@ export const ListView = ({
   // ─── UI state ─────────────────────────────────────────────────────────────
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  console.log(apiUrl)
 
   // ─── Fetch data directly from the FastAPI endpoint ───────────────────────
   // apiUrl is used verbatim as the GET path, e.g. "/state/view/all".

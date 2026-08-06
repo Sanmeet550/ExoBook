@@ -16,7 +16,9 @@ export const FormField = ({
     options = [],
     rows = 3,
     gridSpan = 6, // 6 for half-width (in 12 col grid), 12 for full width
-    disabled = false
+    disabled = false,
+    optionLabel = 'label',
+    optionValue = 'value'
   } = field;
 
   const handleChange = (e) => {
@@ -45,8 +47,8 @@ export const FormField = ({
         >
           <option value="">Select {label}</option>
           {options.map((opt) => {
-            const optVal = typeof opt === 'object' ? opt.value : opt;
-            const optLabel = typeof opt === 'object' ? opt.label : opt;
+            const optVal = typeof opt === 'object' ? opt[optionValue] : opt;
+            const optLabel = typeof opt === 'object' ? opt[optionLabel] : opt;
             return (
               <option key={optVal} value={optVal}>
                 {optLabel}

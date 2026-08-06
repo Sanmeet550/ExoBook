@@ -85,7 +85,10 @@ export const apiService = {
    * Delete a record by id.
    * DELETE /{resource}/delete/{id}
    */
-  delete: (resource, id) => http.delete(`/${resource}/delete/${id}`),
+  delete: (resource, id) => {
+    const paramName = `${resource}_id`;
+    return http.delete(`/${resource}/delete`, { params: { [paramName]: id } });
+  },
 
   /**
    * Low-level escape hatch — make any arbitrary HTTP request.

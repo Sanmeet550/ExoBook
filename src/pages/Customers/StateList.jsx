@@ -1,26 +1,45 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import ListView from '../../components/listview/ListView';
 import FormView from '../../components/formview/FormView';
 import Modal from '../../components/common/Modal';
 import apiService from '../../services/api';
+import axios from 'axios';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 
 export const StateList = () => {
   console.log('State')
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingState, setEditingState] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [countries,setCountries] = useState([]);
 
   const columns = [
     { key: 'name', label: 'State Name' },
     { key: 'code', label: 'State Code' },
-    { key: 'country', label: 'Country' }
+    { key: 'country_id', label: 'Country' }
   ];
 
   const stateFields = [
     { name: 'name', label: 'State Name', type: 'text', required: true, gridSpan: 6, placeholder: 'e.g. Maharashtra' },
     { name: 'code', label: 'State Code', type: 'text', required: true, gridSpan: 6, placeholder: 'e.g. MH' },
-    { name: 'country', label: 'Country', type: 'select', options: ['India', 'United States', 'United Kingdom'], required: true, gridSpan: 12 }
+    { name: 'country_id', label: 'Country', type: 'select', options: countries, required: true, gridSpan: 12,optionLabel: 'name', optionValue: 'id'  }
   ];
+
+  useEffect(()=>{
+    fetchCountries()
+  },[])
+
+  const fetchCountries = async() => {
+    try {
+      const resp = await axios.get(`${API_BASE_URL}/country/view/all`)
+      console.log(resp.data)
+      setCountries(resp.data)
+      
+    } catch (error) {
+      console.log(error)
+      
+    }
+  }
 
   const handleNew = () => {
     setEditingState(null);
@@ -41,9 +60,9 @@ export const StateList = () => {
 
   const handleSubmit = async (formData) => {
     if (editingState) {
-      await apiService.update('/state/update', editingState.id, formData);
+      await apiService.update('state', editingState.id, formData);
     } else {
-      await apiService.create('/state', formData);
+      await apiService.create('state', formData);
     }
     setIsModalOpen(false);
     setRefreshKey(k => k + 1);
