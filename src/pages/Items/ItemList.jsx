@@ -1,13 +1,16 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import ListView from '../../components/listview/ListView';
 import FormView from '../../components/formview/FormView';
 import Modal from '../../components/common/Modal';
 import apiService from '../../services/api';
+import axios from 'axios';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 
 export const ItemList = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [categories,setCategories] = useState([]);
 
   const columns = [
     { key: 'name', label: 'Item Name' },
@@ -21,11 +24,27 @@ export const ItemList = () => {
   const itemFields = [
     { name: 'name', label: 'Item Name', type: 'text', required: true, gridSpan: 6, placeholder: 'e.g. Thermal Printer' },
     { name: 'code', label: 'Item SKU / Code', type: 'text', required: true, gridSpan: 6, placeholder: 'e.g. HW-001' },
-    { name: 'category', label: 'Category', type: 'select', options: ['Software', 'Hardware', 'Supplies'], required: true, gridSpan: 6 },
+    { name: 'categ_id', label: 'Category', type: 'select', required: true, gridSpan: 12, placeholder: 'e.g. +91',options: categories, optionLabel: 'name', optionValue: 'id' },
     { name: 'price', label: 'Selling Price ($)', type: 'number', required: true, gridSpan: 6, placeholder: 'e.g. 150' },
     { name: 'stock', label: 'Opening Stock', type: 'number', required: true, gridSpan: 6, placeholder: 'e.g. 50' },
     { name: 'unit', label: 'Unit of Measure', type: 'select', options: ['Pcs', 'License', 'Box', 'Kg', 'Meter', 'Year'], gridSpan: 6 }
   ];
+
+  useEffect(()=>{
+    fetchCategories()
+  },[])
+
+  const fetchCategories = async () => {
+    try {
+      const resp = await axios.get(`${API_BASE_URL}/product-category/view/all`)
+      console.log(resp.data)
+      setCategories(resp.data)
+      
+    } catch (error) {
+      console.log(error)
+    }
+
+  }
 
   const handleNew = () => {
     setEditingItem(null);
@@ -46,9 +65,9 @@ export const ItemList = () => {
 
   const handleSubmit = async (formData) => {
     if (editingItem) {
-      await apiService.update('items', editingItem.id, formData);
+      await apiService.update('product', editingItem.id, formData);
     } else {
-      await apiService.create('items', formData);
+      await apiService.create('product', formData);
     }
     setIsModalOpen(false);
     setRefreshKey(k => k + 1);
@@ -57,7 +76,7 @@ export const ItemList = () => {
   return (
     <div className="items-page">
       <ListView
-        apiUrl="items"
+        apiUrl="/product/view/all"
         refreshKey={refreshKey}
         title="Items & Products"
         columns={columns}

@@ -39,9 +39,9 @@ export const ItemCategoryList = () => {
 
   const handleSubmit = async (formData) => {
     if (editingCategory) {
-      await apiService.update('categories', editingCategory.id, formData);
+      await apiService.update('product-category', editingCategory.id, formData);
     } else {
-      await apiService.create('categories', { itemCount: 0, ...formData });
+      await apiService.create('product-category', { itemCount: 0, ...formData });
     }
     setIsModalOpen(false);
     setRefreshKey(k => k + 1);
@@ -50,7 +50,7 @@ export const ItemCategoryList = () => {
   return (
     <div className="categories-page">
       <ListView
-        apiUrl="categories"
+        apiUrl="/product-category/view/all"
         refreshKey={refreshKey}
         title="Item Categories"
         columns={columns}
