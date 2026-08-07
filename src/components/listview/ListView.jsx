@@ -86,6 +86,7 @@ export const ListView = ({
 
   useEffect(() => {
     fetchData();
+    console.log('list')
   }, [fetchData, refreshKey]); // re-fetch whenever resource or refreshKey changes
 
   // ─── Active data source ───────────────────────────────────────────────────
