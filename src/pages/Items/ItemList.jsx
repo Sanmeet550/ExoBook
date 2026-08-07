@@ -10,12 +10,14 @@ export const ItemList = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
-  const [categories,setCategories] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [uoms, setUoms] = useState([]);
 
   const columns = [
     { key: 'name', label: 'Item Name' },
     { key: 'code', label: 'SKU / Code' },
     { key: 'category', label: 'Category' },
+    { key : 'product_type', label: 'Product Type'},
     { key: 'price', label: 'Price ($)', render: (val) => `$${val}` },
     { key: 'stock', label: 'Stock Quantity' },
     { key: 'unit', label: 'Unit' }
@@ -24,27 +26,37 @@ export const ItemList = () => {
   const itemFields = [
     { name: 'name', label: 'Item Name', type: 'text', required: true, gridSpan: 6, placeholder: 'e.g. Thermal Printer' },
     { name: 'code', label: 'Item SKU / Code', type: 'text', required: true, gridSpan: 6, placeholder: 'e.g. HW-001' },
-    { name: 'categ_id', label: 'Category', type: 'select', required: true, gridSpan: 12, placeholder: 'e.g. +91',options: categories, optionLabel: 'name', optionValue: 'id' },
+    { name: 'product_type', label: 'Product Type', type: 'select', required: true, gridSpan: 6, placeholder: 'e.g. HW-001',options: [{ value: 'stockable', label: 'Stockable' },{ value: 'consumable', label: 'Consumable' },{ value: 'service', label: 'Service' }],
+  optionLabel: 'label',
+  optionValue: 'value' },
+    { name: 'categ_id', label: 'Category', type: 'select', required: true, gridSpan: 12, placeholder: 'Select Category', options: categories, optionLabel: 'name', optionValue: 'id' },
     { name: 'price', label: 'Selling Price ($)', type: 'number', required: true, gridSpan: 6, placeholder: 'e.g. 150' },
     { name: 'stock', label: 'Opening Stock', type: 'number', required: true, gridSpan: 6, placeholder: 'e.g. 50' },
-    { name: 'unit', label: 'Unit of Measure', type: 'select', options: ['Pcs', 'License', 'Box', 'Kg', 'Meter', 'Year'], gridSpan: 6 }
+    { name: 'uom_id', label: 'Unit of Measure', type: 'select', options: uoms.length > 0 ? uoms : ['Pcs', 'License', 'Box', 'Kg', 'Meter', 'Year'], optionLabel: 'name', optionValue: 'id', gridSpan: 6 }
   ];
 
-  useEffect(()=>{
-    fetchCategories()
-  },[])
+  useEffect(() => {
+    fetchCategories();
+    fetchUoms();
+  }, []);
 
   const fetchCategories = async () => {
     try {
-      const resp = await axios.get(`${API_BASE_URL}/product-category/view/all`)
-      console.log(resp.data)
-      setCategories(resp.data)
-      
+      const resp = await axios.get(`${API_BASE_URL}/product-category/view/all`);
+      setCategories(resp.data);
     } catch (error) {
-      console.log(error)
+      console.log(error);
     }
+  };
 
-  }
+  const fetchUoms = async () => {
+    try {
+      const resp = await axios.get(`${API_BASE_URL}/uom/view/all`);
+      setUoms(resp.data);
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
   const handleNew = () => {
     setEditingItem(null);

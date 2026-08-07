@@ -24,7 +24,8 @@ export const menuConfig = [
     path: "/items",
     submenu: [
       { label: "Item", path: "/items" },
-      { label: "Item Category", path: "/items/categories" }
+      { label: "Item Category", path: "/items/categories" },
+      { label: "UOM", path: "/items/uom" }
     ]
   },
   {

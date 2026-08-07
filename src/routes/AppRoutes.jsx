@@ -6,6 +6,7 @@ import MainLayout from '../components/layout/MainLayout';
 import Dashboard from '../pages/Dashboard/Dashboard';
 import ItemList from '../pages/Items/ItemList';
 import ItemCategoryList from '../pages/Items/ItemCategoryList';
+import UOMList from '../pages/Items/UOMList';
 import CustomerList from '../pages/Customers/CustomerList';
 import StateList from '../pages/Customers/StateList';
 import CountryList from '../pages/Customers/CountryList';
@@ -24,6 +25,7 @@ export const AppRoutes = () => {
         {/* Item Module Routes */}
         <Route path="items" element={<ItemList />} />
         <Route path="items/categories" element={<ItemCategoryList />} />
+        <Route path="items/uom" element={<UOMList />} />
 
         {/* Customer Module Routes */}
         <Route path="customers" element={<CustomerList />} />
