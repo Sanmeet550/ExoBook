@@ -4,8 +4,10 @@ import {
   Users, 
   ShoppingCart, 
   ShoppingBag, 
-  Receipt 
+  Receipt,
+  Settings
 } from 'lucide-react';
+
 
 export const menuConfig = [
   {
@@ -38,6 +40,17 @@ export const menuConfig = [
       { label: "State", path: "/customers/states" },
       { label: "Country", path: "/customers/countries" }
     ]
+  },
+  {
+    key: 'master',
+    label: 'Master Data',
+    path: '/master',
+    icon: Settings,
+    submenu: [
+      { label: 'Company', path: '/master/company' },
+      { label: 'Warehouse', path: '/master/warehouse' },
+      { label: 'Users', path: '/master/users' },
+    ],
   },
   {
     key: "sales",

@@ -14,6 +14,12 @@ import SalesList from '../pages/Sales/SalesList';
 import PurchaseList from '../pages/Purchases/PurchaseList';
 import ExpenseList from '../pages/Expenses/ExpenseList';
 
+// Master Pages
+import CompanyList from '../pages/master/CompanyList';
+import WarehouseList from '../pages/master/WarehouseList';
+import UserList from '../pages/master/UserList';
+
+
 export const AppRoutes = () => {
   return (
     <Routes>
@@ -40,6 +46,12 @@ export const AppRoutes = () => {
 
         {/* Expenses Module Route */}
         <Route path="expenses" element={<ExpenseList />} />
+
+        {/* Master Module Routes */}
+        <Route path="master" element={<Navigate to="/master/company" replace />} />
+        <Route path="master/company" element={<CompanyList />} />
+        <Route path="master/warehouse" element={<WarehouseList />} />
+        <Route path="master/users" element={<UserList />} />
 
         {/* Catch-all fallback */}
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
