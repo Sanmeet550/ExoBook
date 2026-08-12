@@ -47,6 +47,14 @@
   box-shadow: 0 0 0 3px var(--primary-light);
 }
 
+.form-input:disabled {
+  background-color: #f8fafc;
+  color: #334155;
+  cursor: not-allowed;
+  border-color: #e2e8f0;
+  opacity: 0.9;
+}
+
 .form-input.error {
   border-color: var(--danger);
   background-color: var(--danger-bg);

@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import ListView from '../../components/listview/ListView';
 import FormView from '../../components/formview/FormView';
-import Modal from '../../components/common/Modal';
 import apiService from '../../services/api';
 
 export const PurchaseList = () => {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingPurchase, setEditingPurchase] = useState(null);
+  const [viewMode, setViewMode] = useState('list');
+  const [selectedPurchase, setSelectedPurchase] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [saving, setSaving] = useState(false);
 
   const columns = [
     { key: 'purchaseNo', label: 'Purchase Order No' },
@@ -34,59 +35,107 @@ export const PurchaseList = () => {
   ];
 
   const handleNew = () => {
-    setEditingPurchase(null);
-    setIsModalOpen(true);
+    setSelectedPurchase(null);
+    setIsEditing(true);
+    setViewMode('form');
   };
 
-  const handleEdit = (row) => {
-    setEditingPurchase(row);
-    setIsModalOpen(true);
+  const handleRowClick = (row) => {
+    setSelectedPurchase(row);
+    setIsEditing(false);
+    setViewMode('form');
+  };
+
+  const handleEditRow = (row) => {
+    setSelectedPurchase(row);
+    setIsEditing(true);
+    setViewMode('form');
+  };
+
+  const handleEnableEdit = () => {
+    setIsEditing(true);
   };
 
   const handleDelete = async (row) => {
-    if (window.confirm(`Are you sure you want to delete purchase ${row.purchaseNo}?`)) {
-      await apiService.delete('purchases', row.id);
-      setRefreshKey(k => k + 1);
+    const target = row || selectedPurchase;
+    if (!target) return;
+    if (window.confirm(`Are you sure you want to delete purchase ${target.purchaseNo}?`)) {
+      await apiService.delete('purchases', target.id);
+      setViewMode('list');
+      setSelectedPurchase(null);
+      setRefreshKey((k) => k + 1);
     }
   };
 
-  const handleSubmit = async (formData) => {
-    if (editingPurchase) {
-      await apiService.update('purchases', editingPurchase.id, formData);
+  const handleDiscard = () => {
+    if (selectedPurchase) {
+      setIsEditing(false);
     } else {
-      await apiService.create('purchases', formData);
+      setViewMode('list');
     }
-    setIsModalOpen(false);
-    setRefreshKey(k => k + 1);
+  };
+
+  const handleBackToList = () => {
+    setViewMode('list');
+    setSelectedPurchase(null);
+    setIsEditing(false);
+  };
+
+  const handleSubmit = async (formData) => {
+    setSaving(true);
+    try {
+      if (selectedPurchase) {
+        const updated = await apiService.update('purchases', selectedPurchase.id, formData);
+        const updatedRecord = (updated && updated.id) ? updated : { ...selectedPurchase, ...formData };
+        setSelectedPurchase(updatedRecord);
+      } else {
+        const created = await apiService.create('purchases', formData);
+        const newRecord = (created && created.id) ? created : { ...formData };
+        setSelectedPurchase(newRecord);
+      }
+      setIsEditing(false);
+      setRefreshKey((k) => k + 1);
+    } catch (err) {
+      console.error('Error saving purchase order:', err);
+      alert(err.message || 'Failed to save purchase order.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
     <div className="purchases-page">
-      <ListView
-        apiUrl="purchases"
-        refreshKey={refreshKey}
-        title="Purchase Orders"
-        columns={columns}
-        onNew={handleNew}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-        searchPlaceholder="Search purchase orders..."
-        newButtonLabel="+ New Purchase Order"
-      />
-
-      <Modal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        title={editingPurchase ? "Edit Purchase Order" : "Create Purchase Order"}
-      >
-        <FormView
-          fields={purchaseFields}
-          initialValues={editingPurchase || { date: new Date().toISOString().split('T')[0] }}
-          onSubmit={handleSubmit}
-          onCancel={() => setIsModalOpen(false)}
-          saveLabel={editingPurchase ? "Update PO" : "Save PO"}
+      {viewMode === 'list' ? (
+        <ListView
+          apiUrl="purchases"
+          refreshKey={refreshKey}
+          title="Purchase Orders"
+          columns={columns}
+          onNew={handleNew}
+          onRowClick={handleRowClick}
+          onEdit={handleEditRow}
+          onDelete={handleDelete}
+          searchPlaceholder="Search purchase orders..."
+          newButtonLabel="+ New Purchase Order"
         />
-      </Modal>
+      ) : (
+        <FormView
+          title={selectedPurchase ? selectedPurchase.purchaseNo || 'Purchase Order Details' : 'New Purchase Order'}
+          fields={purchaseFields}
+          initialValues={selectedPurchase || { date: new Date().toISOString().split('T')[0] }}
+          readOnly={!isEditing}
+          onEdit={handleEnableEdit}
+          onNew={handleNew}
+          onDelete={selectedPurchase ? () => handleDelete(selectedPurchase) : null}
+          onCancel={isEditing ? handleDiscard : handleBackToList}
+          onSubmit={handleSubmit}
+          loading={saving}
+          saveLabel={selectedPurchase ? 'Update PO' : 'Save PO'}
+          cancelLabel={isEditing ? 'Discard' : 'Back to List'}
+          editLabel="Edit"
+          newLabel="+ New PO"
+        />
+      )}
     </div>
   );
 };

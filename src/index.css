@@ -94,10 +94,9 @@ body {
 
 .page-content {
   flex: 1;
-  padding: 1.75rem 2rem;
-  max-width: 1400px;
+  padding: 1rem 1.25rem;
   width: 100%;
-  margin: 0 auto;
+  box-sizing: border-box;
 }
 
 @media (max-width: 640px) {

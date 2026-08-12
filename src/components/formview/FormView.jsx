@@ -9,8 +9,15 @@ export const FormView = ({
   initialValues = {},
   onSubmit,
   onCancel,
+  onEdit,
+  onNew,
+  onDelete,
+  readOnly = false,
   saveLabel = 'Save',
-  cancelLabel = 'Cancel',
+  cancelLabel = 'Discard',
+  editLabel = 'Edit',
+  newLabel = 'New',
+  deleteLabel = 'Delete',
   loading = false
 }) => {
   const [formData, setFormData] = useState({});
@@ -31,6 +38,7 @@ export const FormView = ({
   }, [fields, initialValues]);
 
   const handleFieldChange = (fieldName, value) => {
+    if (readOnly) return;
     setFormData((prev) => ({ ...prev, [fieldName]: value }));
     if (errors[fieldName]) {
       setErrors((prev) => ({ ...prev, [fieldName]: null }));
@@ -53,40 +61,46 @@ export const FormView = ({
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (readOnly) return;
     if (validate()) {
       onSubmit(formData);
     }
   };
 
   return (
-    <div className="formview-card card">
-      {title && (
-        <div className="formview-header">
-          <h2>{title}</h2>
+    <form onSubmit={handleSubmit} className="formview-card card">
+      <div className="formview-header">
+        <div className="formview-title-container">
+          {title && <h2>{title}</h2>}
+          {readOnly && <span className="readonly-badge">Read Only</span>}
         </div>
-      )}
-
-      <form onSubmit={handleSubmit} className="formview-form">
-        <div className="form-grid">
-          {fields.map((field) => (
-            <FormField
-              key={field.name}
-              field={field}
-              value={formData[field.name]}
-              onChange={handleFieldChange}
-              error={errors[field.name]}
-            />
-          ))}
-        </div>
-
         <FormActions
           onCancel={onCancel}
+          onEdit={onEdit}
+          onNew={onNew}
+          onDelete={onDelete}
+          readOnly={readOnly}
           saveLabel={saveLabel}
           cancelLabel={cancelLabel}
+          editLabel={editLabel}
+          newLabel={newLabel}
+          deleteLabel={deleteLabel}
           loading={loading}
         />
-      </form>
-    </div>
+      </div>
+
+      <div className="form-grid">
+        {fields.map((field) => (
+          <FormField
+            key={field.name}
+            field={{ ...field, disabled: readOnly || field.disabled }}
+            value={formData[field.name]}
+            onChange={handleFieldChange}
+            error={readOnly ? null : errors[field.name]}
+          />
+        ))}
+      </div>
+    </form>
   );
 };
 

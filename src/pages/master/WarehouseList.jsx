@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import ListView from '../../components/listview/ListView';
 import FormView from '../../components/formview/FormView';
-import Modal from '../../components/common/Modal';
 import apiService from '../../services/api';
 
 export const WarehouseList = () => {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingWarehouse, setEditingWarehouse] = useState(null);
+  const [viewMode, setViewMode] = useState('list');
+  const [selectedWarehouse, setSelectedWarehouse] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [saving, setSaving] = useState(false);
 
   const columns = [
     { key: 'name', label: 'Warehouse Name' }
@@ -18,20 +19,36 @@ export const WarehouseList = () => {
   ];
 
   const handleNew = () => {
-    setEditingWarehouse(null);
-    setIsModalOpen(true);
+    setSelectedWarehouse(null);
+    setIsEditing(true);
+    setViewMode('form');
   };
 
-  const handleEdit = (warehouse) => {
-    setEditingWarehouse(warehouse);
-    setIsModalOpen(true);
+  const handleRowClick = (warehouse) => {
+    setSelectedWarehouse(warehouse);
+    setIsEditing(false);
+    setViewMode('form');
+  };
+
+  const handleEditRow = (warehouse) => {
+    setSelectedWarehouse(warehouse);
+    setIsEditing(true);
+    setViewMode('form');
+  };
+
+  const handleEnableEdit = () => {
+    setIsEditing(true);
   };
 
   const handleDelete = async (warehouse) => {
-    if (window.confirm(`Are you sure you want to delete ${warehouse.name}?`)) {
+    const target = warehouse || selectedWarehouse;
+    if (!target) return;
+    if (window.confirm(`Are you sure you want to delete ${target.name}?`)) {
       try {
-        await apiService.request('delete', `/warehouse/delete/${warehouse.id}`);
-        setRefreshKey(k => k + 1);
+        await apiService.request('delete', `/warehouse/delete/${target.id}`);
+        setViewMode('list');
+        setSelectedWarehouse(null);
+        setRefreshKey((k) => k + 1);
       } catch (error) {
         console.error('Failed to delete warehouse:', error);
         alert(error.message || 'Failed to delete warehouse');
@@ -39,48 +56,75 @@ export const WarehouseList = () => {
     }
   };
 
+  const handleDiscard = () => {
+    if (selectedWarehouse) {
+      setIsEditing(false);
+    } else {
+      setViewMode('list');
+    }
+  };
+
+  const handleBackToList = () => {
+    setViewMode('list');
+    setSelectedWarehouse(null);
+    setIsEditing(false);
+  };
+
   const handleSubmit = async (formData) => {
+    setSaving(true);
     try {
-      if (editingWarehouse) {
-        await apiService.request('patch', `/warehouse/update/${editingWarehouse.id}`, formData);
+      if (selectedWarehouse) {
+        const res = await apiService.request('patch', `/warehouse/update/${selectedWarehouse.id}`, formData);
+        const updatedRecord = (res && res.id) ? res : { ...selectedWarehouse, ...formData };
+        setSelectedWarehouse(updatedRecord);
       } else {
-        await apiService.request('post', '/warehouse/create', formData);
+        const res = await apiService.request('post', '/warehouse/create', formData);
+        const newRecord = (res && res.id) ? res : { ...formData };
+        setSelectedWarehouse(newRecord);
       }
-      setIsModalOpen(false);
-      setRefreshKey(k => k + 1);
+      setIsEditing(false);
+      setRefreshKey((k) => k + 1);
     } catch (error) {
       console.error('Failed to save warehouse:', error);
       alert(error.message || 'Failed to save warehouse');
+    } finally {
+      setSaving(false);
     }
   };
 
   return (
     <div className="warehouses-page">
-      <ListView
-        apiUrl="/warehouse/view/all"
-        refreshKey={refreshKey}
-        title="Warehouses"
-        columns={columns}
-        onNew={handleNew}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-        searchPlaceholder="Search warehouse..."
-        newButtonLabel="+ New Warehouse"
-      />
-
-      <Modal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        title={editingWarehouse ? "Edit Warehouse" : "Create Warehouse"}
-      >
-        <FormView
-          fields={warehouseFields}
-          initialValues={editingWarehouse || {}}
-          onSubmit={handleSubmit}
-          onCancel={() => setIsModalOpen(false)}
-          saveLabel={editingWarehouse ? "Update Warehouse" : "Save Warehouse"}
+      {viewMode === 'list' ? (
+        <ListView
+          apiUrl="/warehouse/view/all"
+          refreshKey={refreshKey}
+          title="Warehouses"
+          columns={columns}
+          onNew={handleNew}
+          onRowClick={handleRowClick}
+          onEdit={handleEditRow}
+          onDelete={handleDelete}
+          searchPlaceholder="Search warehouse..."
+          newButtonLabel="+ New Warehouse"
         />
-      </Modal>
+      ) : (
+        <FormView
+          title={selectedWarehouse ? selectedWarehouse.name || 'Warehouse Details' : 'New Warehouse'}
+          fields={warehouseFields}
+          initialValues={selectedWarehouse || {}}
+          readOnly={!isEditing}
+          onEdit={handleEnableEdit}
+          onNew={handleNew}
+          onDelete={selectedWarehouse ? () => handleDelete(selectedWarehouse) : null}
+          onCancel={isEditing ? handleDiscard : handleBackToList}
+          onSubmit={handleSubmit}
+          loading={saving}
+          saveLabel={selectedWarehouse ? 'Update Warehouse' : 'Save Warehouse'}
+          cancelLabel={isEditing ? 'Discard' : 'Back to List'}
+          editLabel="Edit"
+          newLabel="+ New Warehouse"
+        />
+      )}
     </div>
   );
 };

@@ -26,6 +26,26 @@ export const Navbar = ({ onToggleSidebar }) => {
             <button className="mobile-toggle-btn" onClick={onToggleSidebar} aria-label="Toggle Sidebar">
               <Menu size={20} />
             </button>
+            <div className="header-submenu-nav">
+              {submenus.map((sub) => {
+                const isSubActive = location.pathname === sub.path || 
+                  (sub.path !== '/dashboard' && location.pathname === sub.path);
+                
+                return (
+                  <NavLink
+                    key={sub.path}
+                    to={sub.path}
+                    className={({ isActive }) => 
+                      `header-submenu-tab ${isActive || isSubActive ? 'active' : ''}`
+                    }
+                    end
+                  >
+                    <span className="submenu-tab-text">{sub.label}</span>
+                    <span className="submenu-indicator" />
+                  </NavLink>
+                );
+              })}
+            </div>
           </div>
 
           <div className="navbar-right">
@@ -40,32 +60,6 @@ export const Navbar = ({ onToggleSidebar }) => {
               <Settings size={18} />
               <span className="settings-text">Settings</span>
             </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Floating Secondary Submenu Card matching the image */}
-      <div className="sub-navbar-wrapper">
-        <div className="sub-navbar-card">
-          <div className="submenu-container">
-            {submenus.map((sub) => {
-              const isSubActive = location.pathname === sub.path || 
-                (sub.path !== '/dashboard' && location.pathname === sub.path);
-              
-              return (
-                <NavLink
-                  key={sub.path}
-                  to={sub.path}
-                  className={({ isActive }) => 
-                    `submenu-tab ${isActive || isSubActive ? 'active' : ''}`
-                  }
-                  end
-                >
-                  <span className="submenu-tab-text">{sub.label}</span>
-                  <span className="submenu-indicator" />
-                </NavLink>
-              );
-            })}
           </div>
         </div>
       </div>

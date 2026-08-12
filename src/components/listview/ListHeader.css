@@ -1,31 +1,41 @@
 .list-header {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
   align-items: center;
-  justify-content: space-between;
   gap: 1rem;
-  margin-bottom: 1.5rem;
-  flex-wrap: wrap;
+  margin-bottom: 1rem;
+  width: 100%;
 }
 
-.list-header-title h1 {
-  font-size: 1.5rem;
+.list-header-left h1 {
+  font-size: 1.35rem;
   font-weight: 700;
   color: #1b1e3d;
   margin: 0;
   letter-spacing: -0.01em;
+  white-space: nowrap;
 }
 
-.list-header-actions {
+.list-header-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+.list-header-right {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 1rem;
-  flex-wrap: wrap;
 }
 
 .search-box {
   position: relative;
   display: flex;
   align-items: center;
+  width: 100%;
+  max-width: 640px;
 }
 
 .search-icon {
@@ -36,6 +46,7 @@
 }
 
 .search-input {
+  width: 100%;
   padding: 0.625rem 0.875rem 0.625rem 2.5rem;
   font-size: 0.875rem;
   border: 1px solid #e2e8f0;
@@ -43,7 +54,6 @@
   background-color: #ffffff;
   color: #1f2937;
   outline: none;
-  width: 300px;
   transition: all var(--transition-fast);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
 }
@@ -56,6 +66,54 @@
 .search-input::placeholder {
   color: #94a3b8;
   font-size: 0.8125rem;
+}
+
+/* Top Pagination */
+.top-pagination {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background-color: #ffffff;
+  padding: 0.35rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.record-counter {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #475569;
+  white-space: nowrap;
+}
+
+.top-page-btns {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.top-page-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  background-color: #ffffff;
+  color: #1f2937;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.top-page-btn:hover:not(:disabled) {
+  background-color: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.top-page-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 .btn-new-item {
@@ -71,6 +129,7 @@
   border-radius: 8px;
   border: none;
   cursor: pointer;
+  white-space: nowrap;
   transition: background-color var(--transition-fast);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
@@ -79,18 +138,23 @@
   background-color: #272a54;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 900px) {
   .list-header {
-    flex-direction: column;
-    align-items: stretch;
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
   }
 
-  .list-header-actions {
-    flex-direction: column;
-    align-items: stretch;
+  .list-header-center {
+    order: 2;
   }
 
-  .search-box, .search-input, .btn-new-item {
+  .list-header-right {
+    justify-content: space-between;
+    order: 3;
     width: 100%;
+  }
+
+  .search-box {
+    max-width: 100%;
   }
 }

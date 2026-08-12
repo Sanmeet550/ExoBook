@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import ListView from '../../components/listview/ListView';
 import FormView from '../../components/formview/FormView';
-import Modal from '../../components/common/Modal';
 import apiService from '../../services/api';
 
 export const ExpenseList = () => {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingExpense, setEditingExpense] = useState(null);
+  const [viewMode, setViewMode] = useState('list');
+  const [selectedExpense, setSelectedExpense] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [saving, setSaving] = useState(false);
 
   const columns = [
     { key: 'expenseNo', label: 'Expense No' },
@@ -26,59 +27,107 @@ export const ExpenseList = () => {
   ];
 
   const handleNew = () => {
-    setEditingExpense(null);
-    setIsModalOpen(true);
+    setSelectedExpense(null);
+    setIsEditing(true);
+    setViewMode('form');
   };
 
-  const handleEdit = (row) => {
-    setEditingExpense(row);
-    setIsModalOpen(true);
+  const handleRowClick = (row) => {
+    setSelectedExpense(row);
+    setIsEditing(false);
+    setViewMode('form');
+  };
+
+  const handleEditRow = (row) => {
+    setSelectedExpense(row);
+    setIsEditing(true);
+    setViewMode('form');
+  };
+
+  const handleEnableEdit = () => {
+    setIsEditing(true);
   };
 
   const handleDelete = async (row) => {
-    if (window.confirm(`Are you sure you want to delete expense ${row.expenseNo}?`)) {
-      await apiService.delete('expenses', row.id);
-      setRefreshKey(k => k + 1);
+    const target = row || selectedExpense;
+    if (!target) return;
+    if (window.confirm(`Are you sure you want to delete expense ${target.expenseNo}?`)) {
+      await apiService.delete('expenses', target.id);
+      setViewMode('list');
+      setSelectedExpense(null);
+      setRefreshKey((k) => k + 1);
     }
   };
 
-  const handleSubmit = async (formData) => {
-    if (editingExpense) {
-      await apiService.update('expenses', editingExpense.id, formData);
+  const handleDiscard = () => {
+    if (selectedExpense) {
+      setIsEditing(false);
     } else {
-      await apiService.create('expenses', formData);
+      setViewMode('list');
     }
-    setIsModalOpen(false);
-    setRefreshKey(k => k + 1);
+  };
+
+  const handleBackToList = () => {
+    setViewMode('list');
+    setSelectedExpense(null);
+    setIsEditing(false);
+  };
+
+  const handleSubmit = async (formData) => {
+    setSaving(true);
+    try {
+      if (selectedExpense) {
+        const updated = await apiService.update('expenses', selectedExpense.id, formData);
+        const updatedRecord = (updated && updated.id) ? updated : { ...selectedExpense, ...formData };
+        setSelectedExpense(updatedRecord);
+      } else {
+        const created = await apiService.create('expenses', formData);
+        const newRecord = (created && created.id) ? created : { ...formData };
+        setSelectedExpense(newRecord);
+      }
+      setIsEditing(false);
+      setRefreshKey((k) => k + 1);
+    } catch (err) {
+      console.error('Error saving expense:', err);
+      alert(err.message || 'Failed to save expense entry.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
     <div className="expenses-page">
-      <ListView
-        apiUrl="expenses"
-        refreshKey={refreshKey}
-        title="Business Expenses"
-        columns={columns}
-        onNew={handleNew}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-        searchPlaceholder="Search expenses by voucher or category..."
-        newButtonLabel="+ Record Expense"
-      />
-
-      <Modal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        title={editingExpense ? "Edit Expense Entry" : "Record Expense Entry"}
-      >
-        <FormView
-          fields={expenseFields}
-          initialValues={editingExpense || { date: new Date().toISOString().split('T')[0] }}
-          onSubmit={handleSubmit}
-          onCancel={() => setIsModalOpen(false)}
-          saveLabel={editingExpense ? "Update Expense" : "Save Expense"}
+      {viewMode === 'list' ? (
+        <ListView
+          apiUrl="expenses"
+          refreshKey={refreshKey}
+          title="Business Expenses"
+          columns={columns}
+          onNew={handleNew}
+          onRowClick={handleRowClick}
+          onEdit={handleEditRow}
+          onDelete={handleDelete}
+          searchPlaceholder="Search expenses by voucher or category..."
+          newButtonLabel="+ Record Expense"
         />
-      </Modal>
+      ) : (
+        <FormView
+          title={selectedExpense ? selectedExpense.expenseNo || 'Expense Entry Details' : 'Record Expense Entry'}
+          fields={expenseFields}
+          initialValues={selectedExpense || { date: new Date().toISOString().split('T')[0] }}
+          readOnly={!isEditing}
+          onEdit={handleEnableEdit}
+          onNew={handleNew}
+          onDelete={selectedExpense ? () => handleDelete(selectedExpense) : null}
+          onCancel={isEditing ? handleDiscard : handleBackToList}
+          onSubmit={handleSubmit}
+          loading={saving}
+          saveLabel={selectedExpense ? 'Update Expense' : 'Save Expense'}
+          cancelLabel={isEditing ? 'Discard' : 'Back to List'}
+          editLabel="Edit"
+          newLabel="+ Record Expense"
+        />
+      )}
     </div>
   );
 };

@@ -47,6 +47,7 @@ export const ListView = ({
   onNew,
   onEdit,
   onDelete,
+  onRowClick,
   searchPlaceholder = 'Search...',
   newButtonLabel = '+ New',
   pageSize = 10
@@ -168,7 +169,11 @@ export const ListView = ({
     }
 
     return paginatedData.map((row, index) => (
-      <tr key={row.id ?? index}>
+      <tr
+        key={row.id ?? index}
+        onClick={() => onRowClick && onRowClick(row)}
+        className={onRowClick ? 'clickable-row' : ''}
+      >
         {columns.map((col) => (
           <td key={col.key || col.label} style={{ textAlign: col.align || 'left' }}>
             {col.render ? col.render(row[col.key], row) : row[col.key]}
@@ -180,7 +185,10 @@ export const ListView = ({
               {onEdit && (
                 <button
                   className="action-btn edit-btn"
-                  onClick={() => onEdit(row)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEdit(row);
+                  }}
                   title="Edit"
                   aria-label="Edit item"
                 >
@@ -190,7 +198,10 @@ export const ListView = ({
               {onDelete && (
                 <button
                   className="action-btn delete-btn"
-                  onClick={() => onDelete(row)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete(row);
+                  }}
                   title="Delete"
                   aria-label="Delete item"
                 >
@@ -215,6 +226,11 @@ export const ListView = ({
           searchPlaceholder={searchPlaceholder}
           onNew={onNew}
           newButtonLabel={newButtonLabel}
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={filteredData.length}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
         />
       )}
 
@@ -239,16 +255,6 @@ export const ListView = ({
             </tbody>
           </table>
         </div>
-
-        {!loading && !error && (
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            totalItems={filteredData.length}
-            pageSize={pageSize}
-            onPageChange={setCurrentPage}
-          />
-        )}
       </div>
     </div>
   );

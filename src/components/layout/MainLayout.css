@@ -21,10 +21,9 @@
 
 .page-content {
   flex: 1;
-  padding: 1.5rem 2rem 2rem 2rem;
-  max-width: 1600px;
+  padding: 1rem 1.25rem 1.5rem 1.25rem;
   width: 100%;
-  margin: 0 auto;
+  box-sizing: border-box;
 }
 
 @media (max-width: 768px) {

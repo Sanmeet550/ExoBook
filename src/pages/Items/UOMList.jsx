@@ -1,30 +1,18 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import ListView from '../../components/listview/ListView';
 import FormView from '../../components/formview/FormView';
-import Modal from '../../components/common/Modal';
 import apiService from '../../services/api';
-import axios from 'axios';
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
 export const UOMList = () => {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingUom, setEditingUom] = useState(null);
+  const [viewMode, setViewMode] = useState('list');
+  const [selectedUom, setSelectedUom] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
-  const [uoms, setUoms] = useState([]);
+  const [saving, setSaving] = useState(false);
 
   const columns = [
     { key: 'name', label: 'UOM Name' },
-    { key: 'quantity', label: 'Quantity / Ratio', render: (val) => val ?? 1 },
-    // {
-    //   key: 'reference_unit_id',
-    //   label: 'Reference Unit',
-    //   render: (val) => {
-    //     if (!val) return '-';
-    //     const refUom = uoms.find((u) => u.id === val);
-    //     return refUom ? refUom.name : val;
-    //   }
-    // }
+    { key: 'quantity', label: 'Quantity / Ratio', render: (val) => val ?? 1 }
   ];
 
   const uomFields = [
@@ -40,87 +28,113 @@ export const UOMList = () => {
       name: 'quantity',
       label: 'Quantity / Ratio',
       type: 'number',
-      gridSpan: 6,
+      gridSpan: 12,
       placeholder: 'e.g. 1'
-    },
-    // {
-    //   name: 'reference_unit_id',
-    //   label: 'Reference Unit',
-    //   type: 'select',
-    //   options: [],
-    //   optionLabel: 'name',
-    //   optionValue: 'id',
-    //   gridSpan: 6
-    // }
+    }
   ];
 
-  useEffect(() => {
-    fetchUoms();
-  }, [refreshKey]);
-
-  const fetchUoms = async () => {
-    try {
-      const resp = await axios.get(`${API_BASE_URL}/uom/view/all`);
-      setUoms(resp.data || []);
-    } catch (error) {
-      console.error('Failed to fetch UOMs:', error);
-    }
-  };
-
   const handleNew = () => {
-    setEditingUom(null);
-    setIsModalOpen(true);
+    setSelectedUom(null);
+    setIsEditing(true);
+    setViewMode('form');
   };
 
-  const handleEdit = (row) => {
-    setEditingUom(row);
-    setIsModalOpen(true);
+  const handleRowClick = (row) => {
+    setSelectedUom(row);
+    setIsEditing(false);
+    setViewMode('form');
+  };
+
+  const handleEditRow = (row) => {
+    setSelectedUom(row);
+    setIsEditing(true);
+    setViewMode('form');
+  };
+
+  const handleEnableEdit = () => {
+    setIsEditing(true);
   };
 
   const handleDelete = async (row) => {
-    if (window.confirm(`Are you sure you want to delete item ${row.name}?`)) {
-      await apiService.delete('uom', row.id);
-      setRefreshKey(k => k + 1);
+    const target = row || selectedUom;
+    if (!target) return;
+    if (window.confirm(`Are you sure you want to delete UOM ${target.name}?`)) {
+      await apiService.delete('uom', target.id);
+      setViewMode('list');
+      setSelectedUom(null);
+      setRefreshKey((k) => k + 1);
     }
   };
 
-  const handleSubmit = async (formData) => {
-    if (editingUom) {
-      await apiService.update('uom', editingUom.id, formData);
+  const handleDiscard = () => {
+    if (selectedUom) {
+      setIsEditing(false);
     } else {
-      await apiService.create('uom', formData);
+      setViewMode('list');
     }
-    setIsModalOpen(false);
-    setRefreshKey(k => k + 1);
+  };
+
+  const handleBackToList = () => {
+    setViewMode('list');
+    setSelectedUom(null);
+    setIsEditing(false);
+  };
+
+  const handleSubmit = async (formData) => {
+    setSaving(true);
+    try {
+      if (selectedUom) {
+        const updated = await apiService.update('uom', selectedUom.id, formData);
+        const updatedRecord = (updated && updated.id) ? updated : { ...selectedUom, ...formData };
+        setSelectedUom(updatedRecord);
+      } else {
+        const created = await apiService.create('uom', formData);
+        const newRecord = (created && created.id) ? created : { ...formData };
+        setSelectedUom(newRecord);
+      }
+      setIsEditing(false);
+      setRefreshKey((k) => k + 1);
+    } catch (err) {
+      console.error('Error saving UOM:', err);
+      alert(err.message || 'Failed to save UOM.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
     <div className="uom-page">
-      <ListView
-        apiUrl="/uom/view/all"
-        refreshKey={refreshKey}
-        title="Unit of Measurement (UOM)"
-        columns={columns}
-        onNew={handleNew}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-        searchPlaceholder="Search UOM..."
-        newButtonLabel="+ New UOM"
-      />
-
-      <Modal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        title={editingUom ? 'Edit UOM' : 'Create Unit of Measurement'}
-      >
-        <FormView
-          fields={uomFields}
-          initialValues={editingUom || {}}
-          onSubmit={handleSubmit}
-          onCancel={() => setIsModalOpen(false)}
-          saveLabel={editingUom ? 'Update UOM' : 'Save UOM'}
+      {viewMode === 'list' ? (
+        <ListView
+          apiUrl="/uom/view/all"
+          refreshKey={refreshKey}
+          title="Unit of Measurement (UOM)"
+          columns={columns}
+          onNew={handleNew}
+          onRowClick={handleRowClick}
+          onEdit={handleEditRow}
+          onDelete={handleDelete}
+          searchPlaceholder="Search UOM..."
+          newButtonLabel="+ New UOM"
         />
-      </Modal>
+      ) : (
+        <FormView
+          title={selectedUom ? selectedUom.name || 'UOM Details' : 'New Unit of Measurement'}
+          fields={uomFields}
+          initialValues={selectedUom || {}}
+          readOnly={!isEditing}
+          onEdit={handleEnableEdit}
+          onNew={handleNew}
+          onDelete={selectedUom ? () => handleDelete(selectedUom) : null}
+          onCancel={isEditing ? handleDiscard : handleBackToList}
+          onSubmit={handleSubmit}
+          loading={saving}
+          saveLabel={selectedUom ? 'Update UOM' : 'Save UOM'}
+          cancelLabel={isEditing ? 'Discard' : 'Back to List'}
+          editLabel="Edit"
+          newLabel="+ New UOM"
+        />
+      )}
     </div>
   );
 };

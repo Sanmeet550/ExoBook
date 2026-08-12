@@ -1,15 +1,17 @@
 .listview-wrapper {
   display: flex;
   flex-direction: column;
-  margin-bottom: 2rem;
+  margin-bottom: 1rem;
+  width: 100%;
 }
 
 .listview-card {
   background-color: #ffffff;
-  border-radius: 12px;
+  border-radius: 10px;
   border: 1px solid #eef0f5;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
   overflow: hidden;
+  width: 100%;
 }
 
 .table-responsive {
@@ -25,19 +27,19 @@
 }
 
 .listview-table th {
-  background-color: #ffffff;
+  background-color: #f8fafc;
   color: #64748b;
   font-weight: 700;
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  padding: 1.25rem 1.5rem;
+  padding: 0.75rem 1rem;
   border-bottom: 1px solid #eef0f5;
   white-space: nowrap;
 }
 
 .listview-table td {
-  padding: 1.25rem 1.5rem;
+  padding: 0.75rem 1rem;
   color: #1b1e3d;
   font-weight: 500;
   font-size: 0.875rem;
@@ -51,6 +53,14 @@
 
 .listview-table tbody tr:hover {
   background-color: #f8fafc;
+}
+
+.listview-table tbody tr.clickable-row {
+  cursor: pointer;
+}
+
+.listview-table tbody tr.clickable-row:hover {
+  background-color: #f1f5f9;
 }
 
 .listview-table tbody tr:last-child td {

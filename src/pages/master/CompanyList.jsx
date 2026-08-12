@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import ListView from '../../components/listview/ListView';
 import FormView from '../../components/formview/FormView';
-import Modal from '../../components/common/Modal';
 import apiService from '../../services/api';
 
 export const CompanyList = () => {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingCompany, setEditingCompany] = useState(null);
+  const [viewMode, setViewMode] = useState('list');
+  const [selectedCompany, setSelectedCompany] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [saving, setSaving] = useState(false);
 
   const columns = [
     { key: 'name', label: 'Company Name' },
@@ -24,20 +25,36 @@ export const CompanyList = () => {
   ];
 
   const handleNew = () => {
-    setEditingCompany(null);
-    setIsModalOpen(true);
+    setSelectedCompany(null);
+    setIsEditing(true);
+    setViewMode('form');
   };
 
-  const handleEdit = (company) => {
-    setEditingCompany(company);
-    setIsModalOpen(true);
+  const handleRowClick = (company) => {
+    setSelectedCompany(company);
+    setIsEditing(false);
+    setViewMode('form');
+  };
+
+  const handleEditRow = (company) => {
+    setSelectedCompany(company);
+    setIsEditing(true);
+    setViewMode('form');
+  };
+
+  const handleEnableEdit = () => {
+    setIsEditing(true);
   };
 
   const handleDelete = async (company) => {
-    if (window.confirm(`Are you sure you want to delete ${company.name}?`)) {
+    const target = company || selectedCompany;
+    if (!target) return;
+    if (window.confirm(`Are you sure you want to delete ${target.name}?`)) {
       try {
-        await apiService.request('delete', `/company/delete/${company.id}`);
-        setRefreshKey(k => k + 1);
+        await apiService.request('delete', `/company/delete/${target.id}`);
+        setViewMode('list');
+        setSelectedCompany(null);
+        setRefreshKey((k) => k + 1);
       } catch (error) {
         console.error('Failed to delete company:', error);
         alert(error.message || 'Failed to delete company');
@@ -45,48 +62,75 @@ export const CompanyList = () => {
     }
   };
 
+  const handleDiscard = () => {
+    if (selectedCompany) {
+      setIsEditing(false);
+    } else {
+      setViewMode('list');
+    }
+  };
+
+  const handleBackToList = () => {
+    setViewMode('list');
+    setSelectedCompany(null);
+    setIsEditing(false);
+  };
+
   const handleSubmit = async (formData) => {
+    setSaving(true);
     try {
-      if (editingCompany) {
-        await apiService.request('patch', `/company/update/${editingCompany.id}`, formData);
+      if (selectedCompany) {
+        const res = await apiService.request('patch', `/company/update/${selectedCompany.id}`, formData);
+        const updatedRecord = (res && res.id) ? res : { ...selectedCompany, ...formData };
+        setSelectedCompany(updatedRecord);
       } else {
-        await apiService.request('post', '/company/create', formData);
+        const res = await apiService.request('post', '/company/create', formData);
+        const newRecord = (res && res.id) ? res : { ...formData };
+        setSelectedCompany(newRecord);
       }
-      setIsModalOpen(false);
-      setRefreshKey(k => k + 1);
+      setIsEditing(false);
+      setRefreshKey((k) => k + 1);
     } catch (error) {
       console.error('Failed to save company:', error);
       alert(error.message || 'Failed to save company');
+    } finally {
+      setSaving(false);
     }
   };
 
   return (
     <div className="companies-page">
-      <ListView
-        apiUrl="/company/view/all"
-        refreshKey={refreshKey}
-        title="Companies"
-        columns={columns}
-        onNew={handleNew}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-        searchPlaceholder="Search company..."
-        newButtonLabel="+ New Company"
-      />
-
-      <Modal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        title={editingCompany ? "Edit Company" : "Create Company"}
-      >
-        <FormView
-          fields={companyFields}
-          initialValues={editingCompany || {}}
-          onSubmit={handleSubmit}
-          onCancel={() => setIsModalOpen(false)}
-          saveLabel={editingCompany ? "Update Company" : "Save Company"}
+      {viewMode === 'list' ? (
+        <ListView
+          apiUrl="/company/view/all"
+          refreshKey={refreshKey}
+          title="Companies"
+          columns={columns}
+          onNew={handleNew}
+          onRowClick={handleRowClick}
+          onEdit={handleEditRow}
+          onDelete={handleDelete}
+          searchPlaceholder="Search company..."
+          newButtonLabel="+ New Company"
         />
-      </Modal>
+      ) : (
+        <FormView
+          title={selectedCompany ? selectedCompany.name || 'Company Details' : 'New Company'}
+          fields={companyFields}
+          initialValues={selectedCompany || {}}
+          readOnly={!isEditing}
+          onEdit={handleEnableEdit}
+          onNew={handleNew}
+          onDelete={selectedCompany ? () => handleDelete(selectedCompany) : null}
+          onCancel={isEditing ? handleDiscard : handleBackToList}
+          onSubmit={handleSubmit}
+          loading={saving}
+          saveLabel={selectedCompany ? 'Update Company' : 'Save Company'}
+          cancelLabel={isEditing ? 'Discard' : 'Back to List'}
+          editLabel="Edit"
+          newLabel="+ New Company"
+        />
+      )}
     </div>
   );
 };

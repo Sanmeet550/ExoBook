@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import ListView from '../../components/listview/ListView';
 import FormView from '../../components/formview/FormView';
-import Modal from '../../components/common/Modal';
 import apiService from '../../services/api';
 
 export const ItemCategoryList = () => {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingCategory, setEditingCategory] = useState(null);
+  const [viewMode, setViewMode] = useState('list');
+  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [saving, setSaving] = useState(false);
 
   const columns = [
     { key: 'name', label: 'Category Name' },
@@ -21,59 +22,107 @@ export const ItemCategoryList = () => {
   ];
 
   const handleNew = () => {
-    setEditingCategory(null);
-    setIsModalOpen(true);
+    setSelectedCategory(null);
+    setIsEditing(true);
+    setViewMode('form');
   };
 
-  const handleEdit = (row) => {
-    setEditingCategory(row);
-    setIsModalOpen(true);
+  const handleRowClick = (row) => {
+    setSelectedCategory(row);
+    setIsEditing(false);
+    setViewMode('form');
+  };
+
+  const handleEditRow = (row) => {
+    setSelectedCategory(row);
+    setIsEditing(true);
+    setViewMode('form');
+  };
+
+  const handleEnableEdit = () => {
+    setIsEditing(true);
   };
 
   const handleDelete = async (row) => {
-    if (window.confirm(`Are you sure you want to delete category ${row.name}?`)) {
-      await apiService.delete('categories', row.id);
-      setRefreshKey(k => k + 1);
+    const target = row || selectedCategory;
+    if (!target) return;
+    if (window.confirm(`Are you sure you want to delete category ${target.name}?`)) {
+      await apiService.delete('categories', target.id);
+      setViewMode('list');
+      setSelectedCategory(null);
+      setRefreshKey((k) => k + 1);
     }
   };
 
-  const handleSubmit = async (formData) => {
-    if (editingCategory) {
-      await apiService.update('product-category', editingCategory.id, formData);
+  const handleDiscard = () => {
+    if (selectedCategory) {
+      setIsEditing(false);
     } else {
-      await apiService.create('product-category', { itemCount: 0, ...formData });
+      setViewMode('list');
     }
-    setIsModalOpen(false);
-    setRefreshKey(k => k + 1);
+  };
+
+  const handleBackToList = () => {
+    setViewMode('list');
+    setSelectedCategory(null);
+    setIsEditing(false);
+  };
+
+  const handleSubmit = async (formData) => {
+    setSaving(true);
+    try {
+      if (selectedCategory) {
+        const updated = await apiService.update('product-category', selectedCategory.id, formData);
+        const updatedRecord = (updated && updated.id) ? updated : { ...selectedCategory, ...formData };
+        setSelectedCategory(updatedRecord);
+      } else {
+        const created = await apiService.create('product-category', { itemCount: 0, ...formData });
+        const newRecord = (created && created.id) ? created : { itemCount: 0, ...formData };
+        setSelectedCategory(newRecord);
+      }
+      setIsEditing(false);
+      setRefreshKey((k) => k + 1);
+    } catch (err) {
+      console.error('Error saving category:', err);
+      alert(err.message || 'Failed to save category.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
     <div className="categories-page">
-      <ListView
-        apiUrl="/product-category/view/all"
-        refreshKey={refreshKey}
-        title="Item Categories"
-        columns={columns}
-        onNew={handleNew}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-        searchPlaceholder="Search category..."
-        newButtonLabel="+ New Category"
-      />
-
-      <Modal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        title={editingCategory ? "Edit Category" : "Create Item Category"}
-      >
-        <FormView
-          fields={categoryFields}
-          initialValues={editingCategory || {}}
-          onSubmit={handleSubmit}
-          onCancel={() => setIsModalOpen(false)}
-          saveLabel={editingCategory ? "Update Category" : "Save Category"}
+      {viewMode === 'list' ? (
+        <ListView
+          apiUrl="/product-category/view/all"
+          refreshKey={refreshKey}
+          title="Item Categories"
+          columns={columns}
+          onNew={handleNew}
+          onRowClick={handleRowClick}
+          onEdit={handleEditRow}
+          onDelete={handleDelete}
+          searchPlaceholder="Search category..."
+          newButtonLabel="+ New Category"
         />
-      </Modal>
+      ) : (
+        <FormView
+          title={selectedCategory ? selectedCategory.name || 'Category Details' : 'New Item Category'}
+          fields={categoryFields}
+          initialValues={selectedCategory || {}}
+          readOnly={!isEditing}
+          onEdit={handleEnableEdit}
+          onNew={handleNew}
+          onDelete={selectedCategory ? () => handleDelete(selectedCategory) : null}
+          onCancel={isEditing ? handleDiscard : handleBackToList}
+          onSubmit={handleSubmit}
+          loading={saving}
+          saveLabel={selectedCategory ? 'Update Category' : 'Save Category'}
+          cancelLabel={isEditing ? 'Discard' : 'Back to List'}
+          editLabel="Edit"
+          newLabel="+ New Category"
+        />
+      )}
     </div>
   );
 };

@@ -1,120 +1,181 @@
-import React, { use, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import ListView from '../../components/listview/ListView';
 import FormView from '../../components/formview/FormView';
-import Modal from '../../components/common/Modal';
 import apiService from '../../services/api';
 import axios from 'axios';
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
 export const CustomerList = () => {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingCustomer, setEditingCustomer] = useState(null);
+  const [viewMode, setViewMode] = useState('list'); // 'list' | 'form'
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [states, setStates] = useState([]);
-  const [countries,setCountries] = useState([]);
-
+  const [countries, setCountries] = useState([]);
+  const [saving, setSaving] = useState(false);
 
   const columns = [
     { key: 'name', label: 'Name' },
     { key: 'phone', label: 'Phone' },
     { key: 'email', label: 'Email' },
-    { key: 'country', label: 'Country' },
-    { key: 'state', label: 'State' }
+    {
+      key: 'country',
+      label: 'Country',
+      render: (val, row) => {
+        if (row.country_id) {
+          const c = countries.find((item) => String(item.id) === String(row.country_id));
+          if (c) return c.name;
+        }
+        return val || '-';
+      }
+    },
+    {
+      key: 'state',
+      label: 'State',
+      render: (val, row) => {
+        if (row.state_id) {
+          const s = states.find((item) => String(item.id) === String(row.state_id));
+          if (s) return s.name;
+        }
+        return val || '-';
+      }
+    }
   ];
 
   const customerFields = [
     { name: 'name', label: 'Customer Name', type: 'text', required: true, gridSpan: 6, placeholder: 'e.g. ABC Store' },
     { name: 'phone', label: 'Phone Number', type: 'text', required: true, gridSpan: 6, placeholder: 'e.g. 9876543210' },
     { name: 'email', label: 'Email Address', type: 'email', gridSpan: 6, placeholder: 'e.g. info@abc.com' },
-    { name: 'country_id', label: 'Country', type: 'select', options: countries, required: true, gridSpan: 6,optionLabel: 'name', optionValue: 'id'  },
-    { name: 'state_id', label: 'State', type: 'select', options: states, gridSpan: 6,optionLabel: 'name', optionValue: 'id'  }
+    { name: 'country_id', label: 'Country', type: 'select', options: countries, required: true, gridSpan: 6, optionLabel: 'name', optionValue: 'id' },
+    { name: 'state_id', label: 'State', type: 'select', options: states, gridSpan: 6, optionLabel: 'name', optionValue: 'id' }
   ];
 
-  useEffect(()=>{
+  useEffect(() => {
+    fetchStates();
+    fetchCountries();
+  }, []);
 
-    fetchStates()
-    fetchCountries()
-  },[])
-
-
-  const fetchStates =async () => {
+  const fetchStates = async () => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/state/view/all`)
-      console.log(response.data)
-      setStates(response.data)
-      
+      const response = await axios.get(`${API_BASE_URL}/state/view/all`);
+      setStates(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
-      console.log(error)
-      
+      console.error('Failed to fetch states:', error);
     }
-  }
-
-  const fetchCountries =async () => {
-    try {
-      const response = await axios.get(`${API_BASE_URL}/country/view/all`)
-      console.log(response.data)
-      setCountries(response.data)
-      
-    } catch (error) {
-      console.log(error)
-      
-    }
-  }
-
-  const handleNew = () => {
-    setEditingCustomer(null);
-    setIsModalOpen(true);
   };
 
-  const handleEdit = (customer) => {
-    setEditingCustomer(customer);
-    setIsModalOpen(true);
+  const fetchCountries = async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/country/view/all`);
+      setCountries(Array.isArray(response.data) ? response.data : []);
+    } catch (error) {
+      console.error('Failed to fetch countries:', error);
+    }
+  };
+
+  const handleNew = () => {
+    setSelectedCustomer(null);
+    setIsEditing(true);
+    setViewMode('form');
+  };
+
+  const handleRowClick = (customer) => {
+    setSelectedCustomer(customer);
+    setIsEditing(false);
+    setViewMode('form');
+  };
+
+  const handleEditRow = (customer) => {
+    setSelectedCustomer(customer);
+    setIsEditing(true);
+    setViewMode('form');
+  };
+
+  const handleEnableEdit = () => {
+    setIsEditing(true);
   };
 
   const handleDelete = async (customer) => {
-    if (window.confirm(`Are you sure you want to delete ${customer.name}?`)) {
-      await apiService.delete('partner', customer.id);
-      setRefreshKey(k => k + 1);
+    const target = customer || selectedCustomer;
+    if (!target) return;
+    if (window.confirm(`Are you sure you want to delete ${target.name}?`)) {
+      await apiService.delete('partner', target.id);
+      setViewMode('list');
+      setSelectedCustomer(null);
+      setRefreshKey((k) => k + 1);
     }
   };
 
-  const handleSubmit = async (formData) => {
-    if (editingCustomer) {
-      await apiService.update('partner', editingCustomer.id, formData);
+  const handleDiscard = () => {
+    if (selectedCustomer) {
+      setIsEditing(false);
     } else {
-      await apiService.create('partner', formData);
+      setViewMode('list');
     }
-    setIsModalOpen(false);
-    setRefreshKey(k => k + 1);
+  };
+
+  const handleBackToList = () => {
+    setViewMode('list');
+    setSelectedCustomer(null);
+    setIsEditing(false);
+  };
+
+  const handleSubmit = async (formData) => {
+    setSaving(true);
+    try {
+      if (selectedCustomer) {
+        const updated = await apiService.update('partner', selectedCustomer.id, formData);
+        const updatedRecord = (updated && updated.id) ? updated : { ...selectedCustomer, ...formData };
+        setSelectedCustomer(updatedRecord);
+      } else {
+        const created = await apiService.create('partner', formData);
+        const newRecord = (created && created.id) ? created : { ...formData };
+        setSelectedCustomer(newRecord);
+      }
+      setIsEditing(false);
+      setRefreshKey((k) => k + 1);
+    } catch (err) {
+      console.error('Error saving customer:', err);
+      alert(err.message || 'Failed to save customer record.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
     <div className="customers-page">
-      <ListView
-        apiUrl="/partner/view/all"
-        refreshKey={refreshKey}
-        title="Customers"
-        columns={columns}
-        onNew={handleNew}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-        searchPlaceholder="Search customer..."
-        newButtonLabel="+ New Customer"
-      />
-
-      <Modal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        title={editingCustomer ? "Edit Customer" : "Create Customer"}
-      >
-        <FormView
-          fields={customerFields}
-          initialValues={editingCustomer || {}}
-          onSubmit={handleSubmit}
-          onCancel={() => setIsModalOpen(false)}
-          saveLabel={editingCustomer ? "Update Customer" : "Save Customer"}
+      {viewMode === 'list' ? (
+        <ListView
+          apiUrl="/partner/view/all"
+          refreshKey={refreshKey}
+          title="Customers"
+          columns={columns}
+          onNew={handleNew}
+          onRowClick={handleRowClick}
+          onEdit={handleEditRow}
+          onDelete={handleDelete}
+          searchPlaceholder="Search customer..."
+          newButtonLabel="+ New Customer"
         />
-      </Modal>
+      ) : (
+        <FormView
+          title={selectedCustomer ? selectedCustomer.name || 'Customer Details' : 'New Customer'}
+          fields={customerFields}
+          initialValues={selectedCustomer || {}}
+          readOnly={!isEditing}
+          onEdit={handleEnableEdit}
+          onNew={handleNew}
+          onDelete={selectedCustomer ? () => handleDelete(selectedCustomer) : null}
+          onCancel={isEditing ? handleDiscard : handleBackToList}
+          onSubmit={handleSubmit}
+          loading={saving}
+          saveLabel={selectedCustomer ? 'Update Customer' : 'Save Customer'}
+          cancelLabel={isEditing ? 'Discard' : 'Back to List'}
+          editLabel="Edit"
+          newLabel="+ New Customer"
+        />
+      )}
     </div>
   );
 };
