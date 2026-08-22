@@ -56,9 +56,9 @@ export const ItemList = () => {
       gridSpan: 6,
       placeholder: 'Select Product Type',
       options: [
-        { value: 'stockable', label: 'Stockable' },
-        { value: 'consumable', label: 'Consumable' },
-        { value: 'service', label: 'Service' }
+        { value: 'STOCKABLE', label: 'Stockable' },
+        { value: 'CONSUMABLE', label: 'Consumable' },
+        { value: 'SERVICE', label: 'Service' }
       ],
       optionLabel: 'label',
       optionValue: 'value'
@@ -145,6 +145,7 @@ export const ItemList = () => {
       if (selectedItem) {
         const updated = await apiService.update('product', selectedItem.id, formData);
         const updatedRecord = (updated && updated.id) ? updated : { ...selectedItem, ...formData };
+        console.log(updatedRecord)
         setSelectedItem(updatedRecord);
       } else {
         const created = await apiService.create('product', formData);
