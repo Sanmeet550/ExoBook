@@ -15,10 +15,10 @@ export const UserList = () => {
     { key: 'login', label: 'Login / Username' }
   ];
 
-  const userFields = [
-    { name: 'name', label: 'User Name', type: 'text', required: true, gridSpan: 12, placeholder: 'e.g. John Doe' },
-    { name: 'login', label: 'Login / Username', type: 'text', required: true, gridSpan: 12, placeholder: 'e.g. johndoe' }
-  ];
+  const userFields = React.useMemo(() => [
+    { name: 'name', label: 'User Name', type: 'text', required: false, gridSpan: 12, placeholder: 'e.g. John Doe' },
+    { name: 'login', label: 'Login / Username', type: 'text', required: false, gridSpan: 12, placeholder: 'e.g. johndoe' }
+  ], []);
 
   const handleNew = () => {
     setSelectedUser(null);
@@ -38,7 +38,9 @@ export const UserList = () => {
     setViewMode('form');
   };
 
-  const handleEnableEdit = () => {
+  const handleEnableEdit = (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    console.log('Handle Enable Edit')
     setIsEditing(true);
   };
 
