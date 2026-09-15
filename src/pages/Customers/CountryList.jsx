@@ -30,10 +30,10 @@ export const CountryList = () => {
   ];
 
   const countryFields = [
-    { name: 'name', label: 'Country Name', type: 'text', required: true, gridSpan: 6, placeholder: 'e.g. India' },
-    { name: 'code', label: 'Country Code', type: 'text', required: true, gridSpan: 6, placeholder: 'e.g. IN' },
-    { name: 'phone_code', label: 'Phone Dial Code', type: 'text', required: true, gridSpan: 6, placeholder: 'e.g. +91' },
-    { name: 'currency_id', label: 'Currency', type: 'select', required: true, gridSpan: 6, placeholder: 'Select Currency', options: currencies, optionLabel: 'name', optionValue: 'id' }
+    { name: 'name', label: 'Country Name', type: 'text', gridSpan: 6, placeholder: 'e.g. India' },
+    { name: 'code', label: 'Country Code', type: 'text', gridSpan: 6, placeholder: 'e.g. IN' },
+    { name: 'phone_code', label: 'Phone Dial Code', type: 'text', gridSpan: 6, placeholder: 'e.g. +91' },
+    { name: 'currency_id', label: 'Currency', type: 'select', gridSpan: 6, placeholder: 'Select Currency', options: currencies, optionLabel: 'name', optionValue: 'id' }
   ];
 
   useEffect(() => {

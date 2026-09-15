@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import ListView from '../../components/listview/ListView';
 import FormView from '../../components/formview/FormView';
 import apiService from '../../services/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
 export const WarehouseList = () => {
   const [viewMode, setViewMode] = useState('list');
@@ -9,13 +10,19 @@ export const WarehouseList = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [saving, setSaving] = useState(false);
+  const [companies, setCompanies] = useState([]);
 
   const columns = [
-    { key: 'name', label: 'Warehouse Name' }
+    { key: 'name', label: 'Warehouse Name' },
+    { key: 'code', label: 'Code'},
+    { key: 'company_id', label: 'Company'}
   ];
 
   const warehouseFields = [
-    { name: 'name', label: 'Warehouse Name', type: 'text', required: true, gridSpan: 12, placeholder: 'e.g. Main Warehouse' }
+    { name: 'name', label: 'Warehouse Name', type: 'text', required: true, gridSpan: 12, placeholder: 'e.g. Main Warehouse' },
+    { name: 'code', label: 'Code', type: 'text', required: true, placeholder: 'e.g. Code'},
+    { name: 'company_id', label: 'Company', type: 'select', required: true, placeholder: 'e.g. Company',options: companies, optionLabel: 'name', optionValue: 'id'},
+
   ];
 
   const handleNew = () => {
@@ -24,6 +31,20 @@ export const WarehouseList = () => {
     setViewMode('form');
   };
 
+  useEffect(()=>{
+    fetchCompanies();
+  })
+
+  const fetchCompanies = async () =>{
+    try {
+      const resp = await axios.get(`${API_BASE_URL}/company/view/all`);
+      setCompanies(Array.isArray(resp.data) ? resp.data : []);
+    } catch (error) {
+      console.error('Failed to fetch companies:', error);
+    }
+  }
+
+  
   const handleRowClick = (warehouse) => {
     setSelectedWarehouse(warehouse);
     setIsEditing(false);

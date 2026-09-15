@@ -20,6 +20,10 @@ export const CompanyList = () => {
   const companyFields = [
     { name: 'name', label: 'Company Name', type: 'text', required: true, gridSpan: 6, placeholder: 'e.g. Acme Corp' },
     { name: 'email', label: 'Email Address', type: 'email', gridSpan: 6, placeholder: 'e.g. info@acme.com' },
+    {name: 'street', label: 'Street', type: 'text',gridSpan:6, placeholder: 'e.g. Street'},
+    {name: 'street2',label: 'Street2', type: 'text', gridSpan:6,placeholder: 'e.g. Street2'},
+    {name: 'street2',label: 'Street2', type: 'text', gridSpan:6,placeholder: 'e.g. Street2'},
+
     { name: 'mobile', label: 'Mobile Number', type: 'text', gridSpan: 6, placeholder: 'e.g. +123456789' },
     { name: 'city', label: 'City', type: 'text', gridSpan: 6, placeholder: 'e.g. New York' }
   ];
