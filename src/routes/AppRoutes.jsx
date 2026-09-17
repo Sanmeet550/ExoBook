@@ -18,6 +18,10 @@ import ExpenseList from '../pages/Expenses/ExpenseList';
 import CompanyList from '../pages/master/CompanyList';
 import WarehouseList from '../pages/master/WarehouseList';
 import UserList from '../pages/master/UserList';
+import CurrencyList from '../pages/master/CurrencyList';
+import DepartmentList from '../pages/master/DepartmentList';
+import JobPositionList from '../pages/master/JobPositionList';
+import EmployeeList from '../pages/master/EmployeeList';
 
 
 export const AppRoutes = () => {
@@ -52,6 +56,10 @@ export const AppRoutes = () => {
         <Route path="master/company" element={<CompanyList />} />
         <Route path="master/warehouse" element={<WarehouseList />} />
         <Route path="master/users" element={<UserList />} />
+        <Route path="master/currency" element={<CurrencyList />} />
+        <Route path="master/department" element={<DepartmentList />} />
+        <Route path="master/job-position" element={<JobPositionList />} />
+        <Route path="master/employee" element={<EmployeeList />} />
 
         {/* Catch-all fallback */}
         <Route path="*" element={<Navigate to="/dashboard" replace />} />

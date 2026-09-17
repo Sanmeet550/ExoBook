@@ -50,6 +50,10 @@ export const menuConfig = [
       { label: 'Company', path: '/master/company' },
       { label: 'Warehouse', path: '/master/warehouse' },
       { label: 'Users', path: '/master/users' },
+      { label: 'Currency', path: '/master/currency' },
+      { label: 'Department', path: '/master/department' },
+      { label: 'Job Position', path: '/master/job-position' },
+      { label: 'Employee', path: '/master/employee' },
     ],
   },
   {

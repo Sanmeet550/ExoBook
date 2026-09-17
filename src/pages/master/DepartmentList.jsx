@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import ListView from '../../components/listview/ListView';
 import FormView from '../../components/formview/FormView';
 import apiService from '../../services/api';
@@ -6,57 +6,62 @@ import axios from 'axios';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
-export const ItemCategoryList = () => {
+export const DepartmentList = () => {
   const [viewMode, setViewMode] = useState('list');
-  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [selectedDepartment, setSelectedDepartment] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [companies, setCompanies] = useState([]);
   const [saving, setSaving] = useState(false);
-  const [categories, setCategories] = useState([]);
+  const [formServerErrors, setFormServerErrors] = useState([]);
 
   const columns = [
-    { key: 'name', label: 'Category Name' },
-    { key: 'description', label: 'Description' },
-    { key: 'itemCount', label: 'Total Items' }
+    { key: 'name', label: 'Department Name' },
+    {
+      key: 'company_id',
+      label: 'Company',
+      render: (val) => {
+        if (!val) return '-';
+        const comp = companies.find((c) => String(c.id) === String(val));
+        return comp ? comp.name : val;
+      }
+    }
   ];
 
-  const categoryFields = [
-    { name: 'name', label: 'Category Name', type: 'text', gridSpan: 12, placeholder: 'e.g. Hardware' },
-    { name: 'description', label: 'Description', type: 'textarea', gridSpan: 12, placeholder: 'Short category description...' },
-    { name: 'parent_id', label: 'Parent', type: 'select', options: categories, optionLabel: 'name', optionValue: 'id', gridSpan: 6 }
+  const departmentFields = [
+    { name: 'name', label: 'Department Name', type: 'text', required: true, gridSpan: 6, placeholder: 'e.g. Human Resources, Sales, R&D' },
+    { name: 'company_id', label: 'Company', type: 'select', required: true, gridSpan: 6, placeholder: 'Select Company', options: companies, optionLabel: 'name', optionValue: 'id' }
   ];
 
   useEffect(() => {
-    fetchCategories();
+    fetchCompanies();
   }, []);
 
-  const fetchCategories = async () => {
+  const fetchCompanies = async () => {
     try {
-      const resp = await axios.get(`${API_BASE_URL}/product-category/view/all`);
-      setCategories(Array.isArray(resp.data) ? resp.data : []);
+      const resp = await axios.get(`${API_BASE_URL}/company/view/all`);
+      setCompanies(Array.isArray(resp.data) ? resp.data : []);
     } catch (error) {
-      console.error('Failed to fetch categories:', error);
+      console.error('Failed to fetch companies:', error);
     }
   };
 
-  const [formServerErrors, setFormServerErrors] = useState([]);
-
   const handleNew = () => {
-    setSelectedCategory(null);
+    setSelectedDepartment(null);
     setIsEditing(true);
     setFormServerErrors([]);
     setViewMode('form');
   };
 
-  const handleRowClick = (row) => {
-    setSelectedCategory(row);
+  const handleRowClick = (dept) => {
+    setSelectedDepartment(dept);
     setIsEditing(false);
     setFormServerErrors([]);
     setViewMode('form');
   };
 
-  const handleEditRow = (row) => {
-    setSelectedCategory(row);
+  const handleEditRow = (dept) => {
+    setSelectedDepartment(dept);
     setIsEditing(true);
     setFormServerErrors([]);
     setViewMode('form');
@@ -68,17 +73,17 @@ export const ItemCategoryList = () => {
   };
 
   const handleDelete = async (row) => {
-    const target = row || selectedCategory;
+    const target = row || selectedDepartment;
     if (!target) return;
-    if (window.confirm(`Are you sure you want to delete category ${target.name}?`)) {
+    if (window.confirm(`Are you sure you want to delete department ${target.name}?`)) {
       setFormServerErrors([]);
       try {
-        await apiService.delete('product-category', target.id);
+        await apiService.delete('department', target.id);
         setViewMode('list');
-        setSelectedCategory(null);
+        setSelectedDepartment(null);
         setRefreshKey((k) => k + 1);
       } catch (err) {
-        console.error('Error deleting category:', err);
+        console.error('Error deleting department:', err);
         const errList = err?.errors || err?.response?.data?.errors || [{ field: 'id', message: err?.message || 'Deletion failed.' }];
         setFormServerErrors(errList);
         const firstMsg = errList[0]?.message || err?.message || 'Deletion failed.';
@@ -89,7 +94,7 @@ export const ItemCategoryList = () => {
 
   const handleDiscard = () => {
     setFormServerErrors([]);
-    if (selectedCategory) {
+    if (selectedDepartment) {
       setIsEditing(false);
     } else {
       setViewMode('list');
@@ -98,7 +103,7 @@ export const ItemCategoryList = () => {
 
   const handleBackToList = () => {
     setViewMode('list');
-    setSelectedCategory(null);
+    setSelectedDepartment(null);
     setIsEditing(false);
     setFormServerErrors([]);
   };
@@ -107,19 +112,19 @@ export const ItemCategoryList = () => {
     setSaving(true);
     setFormServerErrors([]);
     try {
-      if (selectedCategory) {
-        const updated = await apiService.update('product-category', selectedCategory.id, formData);
-        const updatedRecord = (updated && updated.id) ? updated : { ...selectedCategory, ...formData };
-        setSelectedCategory(updatedRecord);
+      if (selectedDepartment) {
+        const updated = await apiService.update('department', selectedDepartment.id, formData);
+        const updatedRecord = (updated && updated.id) ? updated : { ...selectedDepartment, ...formData };
+        setSelectedDepartment(updatedRecord);
       } else {
-        const created = await apiService.create('product-category', { itemCount: 0, ...formData });
-        const newRecord = (created && created.id) ? created : { itemCount: 0, ...formData };
-        setSelectedCategory(newRecord);
+        const created = await apiService.create('department', formData);
+        const newRecord = (created && created.id) ? created : { ...formData };
+        setSelectedDepartment(newRecord);
       }
       setIsEditing(false);
       setRefreshKey((k) => k + 1);
     } catch (err) {
-      console.error('Error saving category:', err);
+      console.error('Error saving department:', err);
       const errList = err?.errors || err?.response?.data?.errors;
       if (errList && setServerErrors) {
         setServerErrors(errList);
@@ -132,41 +137,41 @@ export const ItemCategoryList = () => {
   };
 
   return (
-    <div className="categories-page">
+    <div className="departments-page">
       {viewMode === 'list' ? (
         <ListView
-          apiUrl="/product-category/view/all"
+          apiUrl="/department/view/all"
           refreshKey={refreshKey}
-          title="Item Categories"
+          title="Departments"
           columns={columns}
           onNew={handleNew}
           onRowClick={handleRowClick}
           onEdit={handleEditRow}
           onDelete={handleDelete}
-          searchPlaceholder="Search category..."
-          newButtonLabel="+ New Category"
+          searchPlaceholder="Search department..."
+          newButtonLabel="+ New Department"
         />
       ) : (
         <FormView
-          title={selectedCategory ? selectedCategory.name || 'Category Details' : 'New Item Category'}
-          fields={categoryFields}
-          initialValues={selectedCategory || {}}
+          title={selectedDepartment ? selectedDepartment.name || 'Department Details' : 'New Department'}
+          fields={departmentFields}
+          initialValues={selectedDepartment || {}}
           serverErrors={formServerErrors}
           readOnly={!isEditing}
           onEdit={handleEnableEdit}
           onNew={handleNew}
-          onDelete={selectedCategory ? () => handleDelete(selectedCategory) : null}
+          onDelete={selectedDepartment ? () => handleDelete(selectedDepartment) : null}
           onCancel={isEditing ? handleDiscard : handleBackToList}
           onSubmit={handleSubmit}
           loading={saving}
-          saveLabel={selectedCategory ? 'Update Category' : 'Save Category'}
+          saveLabel={selectedDepartment ? 'Update Department' : 'Save Department'}
           cancelLabel={isEditing ? 'Discard' : 'Back to List'}
           editLabel="Edit"
-          newLabel="+ New Category"
+          newLabel="+ New Department"
         />
       )}
     </div>
   );
 };
 
-export default ItemCategoryList;
+export default DepartmentList;
