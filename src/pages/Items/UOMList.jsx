@@ -20,7 +20,6 @@ export const UOMList = () => {
       name: 'name',
       label: 'UOM Name',
       type: 'text',
-      required: true,
       gridSpan: 12,
       placeholder: 'e.g. Dozen, Kg, Box, Pcs'
     },

@@ -17,7 +17,7 @@ export const ItemCategoryList = () => {
   ];
 
   const categoryFields = [
-    { name: 'name', label: 'Category Name', type: 'text', required: true, gridSpan: 12, placeholder: 'e.g. Hardware' },
+    { name: 'name', label: 'Category Name', type: 'text', gridSpan: 12, placeholder: 'e.g. Hardware' },
     { name: 'description', label: 'Description', type: 'textarea', gridSpan: 12, placeholder: 'Short category description...' }
   ];
 

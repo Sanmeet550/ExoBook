@@ -46,13 +46,12 @@ export const ItemList = () => {
   ];
 
   const itemFields = [
-    { name: 'name', label: 'Item Name', type: 'text', required: true, gridSpan: 6, placeholder: 'e.g. Thermal Printer' },
-    { name: 'code', label: 'Item SKU / Code', type: 'text', required: true, gridSpan: 6, placeholder: 'e.g. HW-001' },
+    { name: 'name', label: 'Item Name', type: 'text', gridSpan: 6, placeholder: 'e.g. Thermal Printer' },
+    { name: 'code', label: 'Item SKU / Code', type: 'text', gridSpan: 6, placeholder: 'e.g. HW-001' },
     {
       name: 'product_type',
       label: 'Product Type',
       type: 'select',
-      required: true,
       gridSpan: 6,
       placeholder: 'Select Product Type',
       options: [
@@ -63,10 +62,10 @@ export const ItemList = () => {
       optionLabel: 'label',
       optionValue: 'value'
     },
-    { name: 'categ_id', label: 'Category', type: 'select', required: true, gridSpan: 6, placeholder: 'Select Category', options: categories, optionLabel: 'name', optionValue: 'id' },
-    { name: 'price', label: 'Selling Price ($)', type: 'number', required: true, gridSpan: 6, placeholder: 'e.g. 150' },
-    { name: 'stock', label: 'Opening Stock', type: 'number', required: true, gridSpan: 6, placeholder: 'e.g. 50' },
-    { name: 'uom_id', label: 'Unit of Measure', type: 'select', options: uoms.length > 0 ? uoms : ['Pcs', 'License', 'Box', 'Kg', 'Meter', 'Year'], optionLabel: 'name', optionValue: 'id', gridSpan: 6 }
+    { name: 'categ_id', label: 'Category', type: 'select', gridSpan: 6, placeholder: 'Select Category', options: categories, optionLabel: 'name', optionValue: 'id' },
+    { name: 'price', label: 'Selling Price ($)', type: 'number', gridSpan: 6, placeholder: 'e.g. 150' },
+    { name: 'stock', label: 'Opening Stock', type: 'number', gridSpan: 6, placeholder: 'e.g. 50' },
+    { name: 'uom_id', label: 'Unit of Measure', type: 'select', options: uoms, optionLabel: 'name', optionValue: 'id', gridSpan: 6 }
   ];
 
   useEffect(() => {
