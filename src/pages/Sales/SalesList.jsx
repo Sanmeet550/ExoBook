@@ -1,7 +1,10 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import ListView from '../../components/listview/ListView';
 import FormView from '../../components/formview/FormView';
 import apiService from '../../services/api';
+import axios from 'axios';
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
 export const SalesList = () => {
   const [viewMode, setViewMode] = useState('list');
@@ -9,12 +12,17 @@ export const SalesList = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [saving, setSaving] = useState(false);
+  const [partners, setPartner] = useState([]);
+  const [states, setStates] = useState([]);
+  const [countries, setCountries] = useState([]);
+  const [currencies, setCurrencies] = useState([]);
+  const [warehouses, setWarehouses] = useState([]);
+  const [companies, setCompanies] = useState([]);
 
   const columns = [
-    { key: 'invoiceNo', label: 'Invoice No' },
-    { key: 'customerName', label: 'Customer' },
+    { key: 'name', label: 'Invoice No' },
+    { key: 'partner_id', label: 'Customer' },
     { key: 'date', label: 'Invoice Date' },
-    { key: 'amount', label: 'Total Amount' },
     {
       key: 'status',
       label: 'Status',
@@ -27,12 +35,85 @@ export const SalesList = () => {
   ];
 
   const salesFields = [
-    { name: 'invoiceNo', label: 'Invoice Number', type: 'text', required: true, gridSpan: 6, placeholder: 'INV-2026-xxx' },
-    { name: 'customerName', label: 'Customer Name', type: 'select', options: ['ABC Store', 'XYZ Store', 'John Traders', 'Apex Solutions'], required: true, gridSpan: 6 },
-    { name: 'date', label: 'Date', type: 'date', required: true, gridSpan: 6 },
-    { name: 'amount', label: 'Total Amount ($)', type: 'text', required: true, gridSpan: 6, placeholder: 'e.g. $1,500.00' },
-    { name: 'status', label: 'Payment Status', type: 'select', options: ['Paid', 'Pending', 'Overdue'], required: true, gridSpan: 12 }
+    { name: 'name', label: 'Number', type: 'text', gridSpan: 6, placeholder: 'INV-2026-xxx' },
+    { name: 'partner_id', label: 'Customer', type: 'select', options: partners, gridSpan: 6, optionLabel: 'name', optionValue: 'id'  },
+    { name: 'validity_date', label: 'Date', type: 'date', required: true, gridSpan: 6 },
+    // { name: 'state_id', label: 'State', type: 'select', options: states, gridSpan: 6, optionLabel: 'name', optionValue: 'id' },
+    { name: 'warehouse_id', label: 'Warehouse', type: 'select', options: warehouses, gridSpan: 6, optionLabel: 'name', optionValue: 'id' },
+    { name: 'country_id', label: 'Country', type: 'select', options: countries, gridSpan: 12, optionLabel: 'name', optionValue: 'id' },
+    { name: 'company_id', label: 'Company', type: 'select', placeholder: 'e.g. Company',options: companies, optionLabel: 'name', optionValue: 'id'},
+    { name: 'currency_id', label: 'Currency', type: 'select', gridSpan: 6, placeholder: 'Select Currency', options: currencies, optionLabel: 'name', optionValue: 'id' }
   ];
+
+  
+  useEffect(()=>{
+    fetchWarehouses();
+    fetchCustomers();
+    fetchStates();
+    fetchCountries();
+    fetchCurrencies();
+    fetchCompanies();
+  },[])
+
+  const fetchCompanies = async () => {
+    try {
+      const resp = await axios.get(`${API_BASE_URL}/company/view/all`);
+      console.log(resp)
+      setCompanies(Array.isArray(resp.data) ? resp.data : []);
+    } catch (error) {
+      console.error('Failed to fetch companies:', error);
+    }
+  };
+
+  const fetchWarehouses = async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/warehouse/view/all`);
+      setWarehouses(Array.isArray(response.data) ? response.data : []);
+    } catch (error) {
+      console.error('Failed to fetch states:', error);
+    }
+  };
+
+
+  const fetchStates = async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/state/view/all`);
+      setStates(Array.isArray(response.data) ? response.data : []);
+    } catch (error) {
+      console.error('Failed to fetch states:', error);
+    }
+  };
+
+  const fetchCountries = async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/country/view/all`);
+      setCountries(Array.isArray(response.data) ? response.data : []);
+    } catch (error) {
+      console.error('Failed to fetch countries:', error);
+    }
+  };
+
+  const fetchCurrencies = async () => {
+    try {
+      const resp = await axios.get(`${API_BASE_URL}/currency/view/all`);
+      setCurrencies(Array.isArray(resp.data) ? resp.data : []);
+    } catch (error) {
+      console.error('Failed to fetch currencies:', error);
+    }
+  };
+
+
+
+  const fetchCustomers = async () => {
+    try {
+      const resp = await axios.get(`${API_BASE_URL}/partner/view/all`);
+      console.log(resp)
+      setPartner(Array.isArray(resp.data) ? resp.data : []);
+      
+    } catch (error) {
+      console.error('Failed to fetch partner:', error);
+    }
+  };
 
   const [formServerErrors, setFormServerErrors] = useState([]);
 
@@ -130,7 +211,7 @@ export const SalesList = () => {
     <div className="sales-page">
       {viewMode === 'list' ? (
         <ListView
-          apiUrl="sales"
+          apiUrl="sales/view/all"
           refreshKey={refreshKey}
           title="Sales Invoices"
           columns={columns}
