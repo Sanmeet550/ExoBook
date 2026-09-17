@@ -34,40 +34,56 @@ export const SalesList = () => {
     { name: 'status', label: 'Payment Status', type: 'select', options: ['Paid', 'Pending', 'Overdue'], required: true, gridSpan: 12 }
   ];
 
+  const [formServerErrors, setFormServerErrors] = useState([]);
+
   const handleNew = () => {
     setSelectedSale(null);
     setIsEditing(true);
+    setFormServerErrors([]);
     setViewMode('form');
   };
 
   const handleRowClick = (row) => {
     setSelectedSale(row);
     setIsEditing(false);
+    setFormServerErrors([]);
     setViewMode('form');
   };
 
   const handleEditRow = (row) => {
     setSelectedSale(row);
     setIsEditing(true);
+    setFormServerErrors([]);
     setViewMode('form');
   };
 
   const handleEnableEdit = () => {
     setIsEditing(true);
+    setFormServerErrors([]);
   };
 
   const handleDelete = async (row) => {
     const target = row || selectedSale;
     if (!target) return;
     if (window.confirm(`Are you sure you want to delete invoice ${target.invoiceNo}?`)) {
-      await apiService.delete('sales', target.id);
-      setViewMode('list');
-      setSelectedSale(null);
-      setRefreshKey((k) => k + 1);
+      setFormServerErrors([]);
+      try {
+        await apiService.delete('sales', target.id);
+        setViewMode('list');
+        setSelectedSale(null);
+        setRefreshKey((k) => k + 1);
+      } catch (err) {
+        console.error('Error deleting sales invoice:', err);
+        const errList = err?.errors || err?.response?.data?.errors || [{ field: 'id', message: err?.message || 'Deletion failed.' }];
+        setFormServerErrors(errList);
+        const firstMsg = errList[0]?.message || err?.message || 'Deletion failed.';
+        alert(firstMsg);
+      }
     }
   };
 
   const handleDiscard = () => {
+    setFormServerErrors([]);
     if (selectedSale) {
       setIsEditing(false);
     } else {
@@ -79,10 +95,12 @@ export const SalesList = () => {
     setViewMode('list');
     setSelectedSale(null);
     setIsEditing(false);
+    setFormServerErrors([]);
   };
 
   const handleSubmit = async (formData, { setServerErrors } = {}) => {
     setSaving(true);
+    setFormServerErrors([]);
     try {
       if (selectedSale) {
         const updated = await apiService.update('sales', selectedSale.id, formData);
@@ -97,10 +115,11 @@ export const SalesList = () => {
       setRefreshKey((k) => k + 1);
     } catch (err) {
       console.error('Error saving sales invoice:', err);
-      if (err.errors && setServerErrors) {
-        setServerErrors(err.errors);
-      } else {
-        alert(err.message || 'Failed to save sales invoice.');
+      const errList = err?.errors || err?.response?.data?.errors;
+      if (errList && setServerErrors) {
+        setServerErrors(errList);
+      } else if (errList) {
+        setFormServerErrors(errList);
       }
     } finally {
       setSaving(false);
@@ -127,6 +146,7 @@ export const SalesList = () => {
           title={selectedSale ? selectedSale.invoiceNo || 'Sales Invoice Details' : 'Create Sales Invoice'}
           fields={salesFields}
           initialValues={selectedSale || { date: new Date().toISOString().split('T')[0] }}
+          serverErrors={formServerErrors}
           readOnly={!isEditing}
           onEdit={handleEnableEdit}
           onNew={handleNew}

@@ -17,9 +17,12 @@ export const FormField = ({
     rows = 3,
     gridSpan = 6, // 6 for half-width (in 12 col grid), 12 for full width
     disabled = false,
+    readOnly = false,
     optionLabel = 'label',
     optionValue = 'value'
   } = field;
+
+  const isFieldDisabled = disabled || readOnly;
 
   const handleChange = (e) => {
     const val = type === 'checkbox' ? e.target.checked : e.target.value;
@@ -43,7 +46,7 @@ export const FormField = ({
           className={`form-input ${error ? 'error' : ''}`}
           value={value ?? ''}
           onChange={handleChange}
-          disabled={disabled}
+          disabled={isFieldDisabled}
         >
           <option value="">Select {label}</option>
           {options.map((opt) => {
@@ -65,7 +68,8 @@ export const FormField = ({
           placeholder={placeholder}
           value={value ?? ''}
           onChange={handleChange}
-          disabled={disabled}
+          disabled={isFieldDisabled}
+          readOnly={readOnly}
         />
       ) : type === 'checkbox' ? (
         <div className="checkbox-container">
@@ -76,7 +80,7 @@ export const FormField = ({
             className="form-checkbox"
             checked={!!value}
             onChange={handleChange}
-            disabled={disabled}
+            disabled={isFieldDisabled}
           />
           <label className="checkbox-label" htmlFor={name}>
             {label} {required && <span className="required-star">*</span>}
@@ -91,7 +95,8 @@ export const FormField = ({
           placeholder={placeholder}
           value={value ?? ''}
           onChange={handleChange}
-          disabled={disabled}
+          disabled={isFieldDisabled}
+          readOnly={readOnly}
         />
       )}
 

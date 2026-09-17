@@ -21,40 +21,56 @@ export const ItemCategoryList = () => {
     { name: 'description', label: 'Description', type: 'textarea', gridSpan: 12, placeholder: 'Short category description...' }
   ];
 
+  const [formServerErrors, setFormServerErrors] = useState([]);
+
   const handleNew = () => {
     setSelectedCategory(null);
     setIsEditing(true);
+    setFormServerErrors([]);
     setViewMode('form');
   };
 
   const handleRowClick = (row) => {
     setSelectedCategory(row);
     setIsEditing(false);
+    setFormServerErrors([]);
     setViewMode('form');
   };
 
   const handleEditRow = (row) => {
     setSelectedCategory(row);
     setIsEditing(true);
+    setFormServerErrors([]);
     setViewMode('form');
   };
 
   const handleEnableEdit = () => {
     setIsEditing(true);
+    setFormServerErrors([]);
   };
 
   const handleDelete = async (row) => {
     const target = row || selectedCategory;
     if (!target) return;
     if (window.confirm(`Are you sure you want to delete category ${target.name}?`)) {
-      await apiService.delete('categories', target.id);
-      setViewMode('list');
-      setSelectedCategory(null);
-      setRefreshKey((k) => k + 1);
+      setFormServerErrors([]);
+      try {
+        await apiService.delete('product-category', target.id);
+        setViewMode('list');
+        setSelectedCategory(null);
+        setRefreshKey((k) => k + 1);
+      } catch (err) {
+        console.error('Error deleting category:', err);
+        const errList = err?.errors || err?.response?.data?.errors || [{ field: 'id', message: err?.message || 'Deletion failed.' }];
+        setFormServerErrors(errList);
+        const firstMsg = errList[0]?.message || err?.message || 'Deletion failed.';
+        alert(firstMsg);
+      }
     }
   };
 
   const handleDiscard = () => {
+    setFormServerErrors([]);
     if (selectedCategory) {
       setIsEditing(false);
     } else {
@@ -66,10 +82,12 @@ export const ItemCategoryList = () => {
     setViewMode('list');
     setSelectedCategory(null);
     setIsEditing(false);
+    setFormServerErrors([]);
   };
 
   const handleSubmit = async (formData, { setServerErrors } = {}) => {
     setSaving(true);
+    setFormServerErrors([]);
     try {
       if (selectedCategory) {
         const updated = await apiService.update('product-category', selectedCategory.id, formData);
@@ -84,10 +102,11 @@ export const ItemCategoryList = () => {
       setRefreshKey((k) => k + 1);
     } catch (err) {
       console.error('Error saving category:', err);
-      if (err.errors && setServerErrors) {
-        setServerErrors(err.errors);
-      } else {
-        alert(err.message || 'Failed to save category.');
+      const errList = err?.errors || err?.response?.data?.errors;
+      if (errList && setServerErrors) {
+        setServerErrors(errList);
+      } else if (errList) {
+        setFormServerErrors(errList);
       }
     } finally {
       setSaving(false);
@@ -114,6 +133,7 @@ export const ItemCategoryList = () => {
           title={selectedCategory ? selectedCategory.name || 'Category Details' : 'New Item Category'}
           fields={categoryFields}
           initialValues={selectedCategory || {}}
+          serverErrors={formServerErrors}
           readOnly={!isEditing}
           onEdit={handleEnableEdit}
           onNew={handleNew}

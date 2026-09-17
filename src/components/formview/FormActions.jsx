@@ -23,7 +23,10 @@ export const FormActions = ({
           <Button
             type="button"
             variant="secondary"
-            onClick={onCancel}
+            onClick={(e) => {
+              e.preventDefault();
+              onCancel(e);
+            }}
             disabled={loading || disabled}
           >
             {cancelLabel}
@@ -33,7 +36,10 @@ export const FormActions = ({
           <Button
             type="button"
             variant="primary"
-            onClick={onEdit}
+            onClick={(e) => {
+              e.preventDefault();
+              onEdit(e);
+            }}
             disabled={loading || disabled}
           >
             {editLabel}
@@ -43,7 +49,10 @@ export const FormActions = ({
           <Button
             type="button"
             variant="secondary"
-            onClick={onNew}
+            onClick={(e) => {
+              e.preventDefault();
+              onNew(e);
+            }}
             disabled={loading || disabled}
           >
             {newLabel}
@@ -53,7 +62,10 @@ export const FormActions = ({
           <Button
             type="button"
             variant="danger"
-            onClick={onDelete}
+            onClick={(e) => {
+              e.preventDefault();
+              onDelete(e);
+            }}
             disabled={loading || disabled}
           >
             {deleteLabel}
@@ -69,7 +81,10 @@ export const FormActions = ({
         <Button
           type="button"
           variant="secondary"
-          onClick={onCancel}
+          onClick={(e) => {
+            e.preventDefault();
+            onCancel(e);
+          }}
           disabled={loading || disabled}
         >
           {cancelLabel}
@@ -89,7 +104,10 @@ export const FormActions = ({
         <Button
           type="button"
           variant="danger"
-          onClick={onDelete}
+          onClick={(e) => {
+            e.preventDefault();
+            onDelete(e);
+          }}
           disabled={loading || disabled}
         >
           {deleteLabel}

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import ListView from '../../components/listview/ListView';
 import FormView from '../../components/formview/FormView';
 import apiService from '../../services/api';
+import axios from 'axios';
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
 export const WarehouseList = () => {
@@ -19,52 +20,59 @@ export const WarehouseList = () => {
   ];
 
   const warehouseFields = [
-    { name: 'name', label: 'Warehouse Name', type: 'text', required: true, gridSpan: 12, placeholder: 'e.g. Main Warehouse' },
-    { name: 'code', label: 'Code', type: 'text', required: true, placeholder: 'e.g. Code'},
-    { name: 'company_id', label: 'Company', type: 'select', required: true, placeholder: 'e.g. Company',options: companies, optionLabel: 'name', optionValue: 'id'},
+    { name: 'name', label: 'Warehouse Name', type: 'text', gridSpan: 12, placeholder: 'e.g. Main Warehouse' },
+    { name: 'code', label: 'Code', type: 'text', placeholder: 'e.g. Code'},
+    { name: 'company_id', label: 'Company', type: 'select', placeholder: 'e.g. Company',options: companies, optionLabel: 'name', optionValue: 'id'},
 
   ];
 
-  const handleNew = () => {
-    setSelectedWarehouse(null);
-    setIsEditing(true);
-    setViewMode('form');
-  };
+  const [formServerErrors, setFormServerErrors] = useState([]);
 
-  useEffect(()=>{
+  useEffect(() => {
     fetchCompanies();
-  })
+  }, []);
 
-  const fetchCompanies = async () =>{
+  const fetchCompanies = async () => {
     try {
       const resp = await axios.get(`${API_BASE_URL}/company/view/all`);
+      console.log(resp)
       setCompanies(Array.isArray(resp.data) ? resp.data : []);
     } catch (error) {
       console.error('Failed to fetch companies:', error);
     }
-  }
+  };
 
-  
+  const handleNew = () => {
+    setSelectedWarehouse(null);
+    setIsEditing(true);
+    setFormServerErrors([]);
+    setViewMode('form');
+  };
+
   const handleRowClick = (warehouse) => {
     setSelectedWarehouse(warehouse);
     setIsEditing(false);
+    setFormServerErrors([]);
     setViewMode('form');
   };
 
   const handleEditRow = (warehouse) => {
     setSelectedWarehouse(warehouse);
     setIsEditing(true);
+    setFormServerErrors([]);
     setViewMode('form');
   };
 
   const handleEnableEdit = () => {
     setIsEditing(true);
+    setFormServerErrors([]);
   };
 
   const handleDelete = async (warehouse) => {
     const target = warehouse || selectedWarehouse;
     if (!target) return;
     if (window.confirm(`Are you sure you want to delete ${target.name}?`)) {
+      setFormServerErrors([]);
       try {
         await apiService.request('delete', `/warehouse/delete/${target.id}`);
         setViewMode('list');
@@ -72,12 +80,16 @@ export const WarehouseList = () => {
         setRefreshKey((k) => k + 1);
       } catch (error) {
         console.error('Failed to delete warehouse:', error);
-        alert(error.message || 'Failed to delete warehouse');
+        const errList = error?.errors || error?.response?.data?.errors || [{ field: 'id', message: error?.message || 'Failed to delete warehouse' }];
+        setFormServerErrors(errList);
+        const firstMsg = errList[0]?.message || error?.message || 'Failed to delete warehouse';
+        alert(firstMsg);
       }
     }
   };
 
   const handleDiscard = () => {
+    setFormServerErrors([]);
     if (selectedWarehouse) {
       setIsEditing(false);
     } else {
@@ -89,10 +101,12 @@ export const WarehouseList = () => {
     setViewMode('list');
     setSelectedWarehouse(null);
     setIsEditing(false);
+    setFormServerErrors([]);
   };
 
   const handleSubmit = async (formData) => {
     setSaving(true);
+    setFormServerErrors([]);
     try {
       if (selectedWarehouse) {
         const res = await apiService.request('patch', `/warehouse/update/${selectedWarehouse.id}`, formData);
@@ -107,7 +121,8 @@ export const WarehouseList = () => {
       setRefreshKey((k) => k + 1);
     } catch (error) {
       console.error('Failed to save warehouse:', error);
-      alert(error.message || 'Failed to save warehouse');
+      const errList = error?.errors || error?.response?.data?.errors;
+      if (errList) setFormServerErrors(errList);
     } finally {
       setSaving(false);
     }
@@ -133,6 +148,7 @@ export const WarehouseList = () => {
           title={selectedWarehouse ? selectedWarehouse.name || 'Warehouse Details' : 'New Warehouse'}
           fields={warehouseFields}
           initialValues={selectedWarehouse || {}}
+          serverErrors={formServerErrors}
           readOnly={!isEditing}
           onEdit={handleEnableEdit}
           onNew={handleNew}

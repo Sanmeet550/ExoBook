@@ -16,38 +16,44 @@ export const UserList = () => {
   ];
 
   const userFields = React.useMemo(() => [
-    { name: 'name', label: 'User Name', type: 'text', required: false, gridSpan: 12, placeholder: 'e.g. John Doe' },
-    { name: 'login', label: 'Login / Username', type: 'text', required: false, gridSpan: 12, placeholder: 'e.g. johndoe' }
+    { name: 'name', label: 'User Name', type: 'text', gridSpan: 12, placeholder: 'e.g. John Doe' },
+    { name: 'login', label: 'Login / Username', type: 'text', gridSpan: 12, placeholder: 'e.g. johndoe' }
   ], []);
+
+  const [formServerErrors, setFormServerErrors] = useState([]);
 
   const handleNew = () => {
     setSelectedUser(null);
     setIsEditing(true);
+    setFormServerErrors([]);
     setViewMode('form');
   };
 
   const handleRowClick = (user) => {
     setSelectedUser(user);
     setIsEditing(false);
+    setFormServerErrors([]);
     setViewMode('form');
   };
 
   const handleEditRow = (user) => {
     setSelectedUser(user);
     setIsEditing(true);
+    setFormServerErrors([]);
     setViewMode('form');
   };
 
   const handleEnableEdit = (e) => {
     if (e && e.preventDefault) e.preventDefault();
-    console.log('Handle Enable Edit')
     setIsEditing(true);
+    setFormServerErrors([]);
   };
 
   const handleDelete = async (user) => {
     const target = user || selectedUser;
     if (!target) return;
     if (window.confirm(`Are you sure you want to delete user ${target.name}?`)) {
+      setFormServerErrors([]);
       try {
         await apiService.request('delete', `/delete/users/${target.id}`);
         setViewMode('list');
@@ -55,12 +61,16 @@ export const UserList = () => {
         setRefreshKey((k) => k + 1);
       } catch (error) {
         console.error('Failed to delete user:', error);
-        alert(error.message || 'Failed to delete user');
+        const errList = error?.errors || error?.response?.data?.errors || [{ field: 'id', message: error?.message || 'Failed to delete user' }];
+        setFormServerErrors(errList);
+        const firstMsg = errList[0]?.message || error?.message || 'Failed to delete user';
+        alert(firstMsg);
       }
     }
   };
 
   const handleDiscard = () => {
+    setFormServerErrors([]);
     if (selectedUser) {
       setIsEditing(false);
     } else {
@@ -72,10 +82,12 @@ export const UserList = () => {
     setViewMode('list');
     setSelectedUser(null);
     setIsEditing(false);
+    setFormServerErrors([]);
   };
 
   const handleSubmit = async (formData) => {
     setSaving(true);
+    setFormServerErrors([]);
     try {
       if (selectedUser) {
         const res = await apiService.request('patch', `/update/users/${selectedUser.id}`, formData);
@@ -90,7 +102,8 @@ export const UserList = () => {
       setRefreshKey((k) => k + 1);
     } catch (error) {
       console.error('Failed to save user:', error);
-      alert(error.message || 'Failed to save user');
+      const errList = error?.errors || error?.response?.data?.errors;
+      if (errList) setFormServerErrors(errList);
     } finally {
       setSaving(false);
     }
@@ -116,6 +129,7 @@ export const UserList = () => {
           title={selectedUser ? selectedUser.name || 'User Details' : 'New User'}
           fields={userFields}
           initialValues={selectedUser || {}}
+          serverErrors={formServerErrors}
           readOnly={!isEditing}
           onEdit={handleEnableEdit}
           onNew={handleNew}

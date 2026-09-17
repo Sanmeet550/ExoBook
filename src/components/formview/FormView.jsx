@@ -18,12 +18,14 @@ const getInitialValues = (fields, initialValues) => {
 };
 
 // Convert a snake_case field name from the API into a human-readable label.
-// Examples:  country_id → "Country"   phone_code → "Phone Code"
-const prettifyFieldName = (name) =>
-  String(name)
+// Examples:  country_id → "Country"   phone_code → "Phone Code"  id → "Record"
+const prettifyFieldName = (name) => {
+  if (!name || String(name).toLowerCase() === 'id') return 'Record';
+  return String(name)
     .replace(/_id$/, '')           // strip trailing _id  (country_id → country)
     .replace(/_/g, ' ')            // underscores → spaces
     .replace(/\b\w/g, (c) => c.toUpperCase()); // Title Case
+};
 
 export const FormView = ({
   title,
@@ -67,17 +69,6 @@ export const FormView = ({
     }
   });
 
-  // Handle server errors passed as a prop
-  useEffect(() => {
-    if (Array.isArray(serverErrors)) {
-      serverErrors.forEach(({ field, message }) => {
-        if (field && message) {
-          setError(field, { type: 'server', message });
-        }
-      });
-    }
-  }, [serverErrors, setError]);
-
   // Holds server-error messages for fields NOT present in the form
   // (backend-only fields). These show only in the summary banner.
   const [unmatchedErrors, setUnmatchedErrors] = useState([]);
@@ -102,6 +93,13 @@ export const FormView = ({
     });
     setUnmatchedErrors(unmatched);
   };
+
+  // Handle server errors passed as a prop
+  useEffect(() => {
+    if (Array.isArray(serverErrors) && serverErrors.length > 0) {
+      applyServerErrors(serverErrors);
+    }
+  }, [serverErrors]);
 
   // Sanitize form data before sending to the API:
   // Empty string on a non-required select/number field -> null
@@ -169,7 +167,7 @@ export const FormView = ({
       {/* Error summary banner:
           - Server errors on visible fields (shown under input AND in banner)
           - Server errors for backend-only fields (shown in banner only) */}
-      {!readOnly && (() => {
+      {(() => {
         const serverFieldErrors = fields.filter(
           (f) => errors[f.name] && errors[f.name].type === 'server'
         );
@@ -197,25 +195,26 @@ export const FormView = ({
       })()}
 
       <div className="form-grid">
-        {fields.map((field) => (
+        {fields.map((fieldItem) => (
           <Controller
-            key={field.name}
-            name={field.name}
+            key={fieldItem.name}
+            name={fieldItem.name}
             control={control}
+            disabled={readOnly || fieldItem.disabled || fieldItem.readOnly}
             rules={{
-              required: field.required ? `${field.label || field.name} is required` : false,
-              pattern: field.pattern,
-              min: field.min,
-              max: field.max,
-              minLength: field.minLength,
-              maxLength: field.maxLength,
-              validate: field.validate
+              required: fieldItem.required ? `${fieldItem.label || fieldItem.name} is required` : false,
+              pattern: fieldItem.pattern,
+              min: fieldItem.min,
+              max: fieldItem.max,
+              minLength: fieldItem.minLength,
+              maxLength: fieldItem.maxLength,
+              validate: fieldItem.validate
             }}
-            render={({ field: { onChange, value }, fieldState: { error } }) => (
+            render={({ field: controllerField, fieldState: { error } }) => (
               <FormField
-                field={{ ...field, disabled: readOnly || field.disabled }}
-                value={value ?? (field.type === 'checkbox' ? false : '')}
-                onChange={(_, val) => onChange(val)}
+                field={{ ...fieldItem, disabled: readOnly || fieldItem.disabled || fieldItem.readOnly, readOnly: readOnly || fieldItem.readOnly }}
+                value={controllerField.value ?? (fieldItem.type === 'checkbox' ? false : '')}
+                onChange={(_, val) => controllerField.onChange(val)}
                 error={readOnly ? null : error?.message}
               />
             )}

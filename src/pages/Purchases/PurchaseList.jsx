@@ -34,40 +34,56 @@ export const PurchaseList = () => {
     { name: 'status', label: 'Order Status', type: 'select', options: ['Completed', 'Pending', 'Cancelled'], required: true, gridSpan: 12 }
   ];
 
+  const [formServerErrors, setFormServerErrors] = useState([]);
+
   const handleNew = () => {
     setSelectedPurchase(null);
     setIsEditing(true);
+    setFormServerErrors([]);
     setViewMode('form');
   };
 
   const handleRowClick = (row) => {
     setSelectedPurchase(row);
     setIsEditing(false);
+    setFormServerErrors([]);
     setViewMode('form');
   };
 
   const handleEditRow = (row) => {
     setSelectedPurchase(row);
     setIsEditing(true);
+    setFormServerErrors([]);
     setViewMode('form');
   };
 
   const handleEnableEdit = () => {
     setIsEditing(true);
+    setFormServerErrors([]);
   };
 
   const handleDelete = async (row) => {
     const target = row || selectedPurchase;
     if (!target) return;
     if (window.confirm(`Are you sure you want to delete purchase ${target.purchaseNo}?`)) {
-      await apiService.delete('purchases', target.id);
-      setViewMode('list');
-      setSelectedPurchase(null);
-      setRefreshKey((k) => k + 1);
+      setFormServerErrors([]);
+      try {
+        await apiService.delete('purchases', target.id);
+        setViewMode('list');
+        setSelectedPurchase(null);
+        setRefreshKey((k) => k + 1);
+      } catch (err) {
+        console.error('Error deleting purchase order:', err);
+        const errList = err?.errors || err?.response?.data?.errors || [{ field: 'id', message: err?.message || 'Deletion failed.' }];
+        setFormServerErrors(errList);
+        const firstMsg = errList[0]?.message || err?.message || 'Deletion failed.';
+        alert(firstMsg);
+      }
     }
   };
 
   const handleDiscard = () => {
+    setFormServerErrors([]);
     if (selectedPurchase) {
       setIsEditing(false);
     } else {
@@ -79,10 +95,12 @@ export const PurchaseList = () => {
     setViewMode('list');
     setSelectedPurchase(null);
     setIsEditing(false);
+    setFormServerErrors([]);
   };
 
   const handleSubmit = async (formData, { setServerErrors } = {}) => {
     setSaving(true);
+    setFormServerErrors([]);
     try {
       if (selectedPurchase) {
         const updated = await apiService.update('purchases', selectedPurchase.id, formData);
@@ -97,10 +115,11 @@ export const PurchaseList = () => {
       setRefreshKey((k) => k + 1);
     } catch (err) {
       console.error('Error saving purchase order:', err);
-      if (err.errors && setServerErrors) {
-        setServerErrors(err.errors);
-      } else {
-        alert(err.message || 'Failed to save purchase order.');
+      const errList = err?.errors || err?.response?.data?.errors;
+      if (errList && setServerErrors) {
+        setServerErrors(errList);
+      } else if (errList) {
+        setFormServerErrors(errList);
       }
     } finally {
       setSaving(false);
@@ -127,6 +146,7 @@ export const PurchaseList = () => {
           title={selectedPurchase ? selectedPurchase.purchaseNo || 'Purchase Order Details' : 'New Purchase Order'}
           fields={purchaseFields}
           initialValues={selectedPurchase || { date: new Date().toISOString().split('T')[0] }}
+          serverErrors={formServerErrors}
           readOnly={!isEditing}
           onEdit={handleEnableEdit}
           onNew={handleNew}

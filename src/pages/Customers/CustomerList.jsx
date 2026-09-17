@@ -74,40 +74,56 @@ export const CustomerList = () => {
     }
   };
 
+  const [formServerErrors, setFormServerErrors] = useState([]);
+
   const handleNew = () => {
     setSelectedCustomer(null);
     setIsEditing(true);
+    setFormServerErrors([]);
     setViewMode('form');
   };
 
   const handleRowClick = (customer) => {
     setSelectedCustomer(customer);
     setIsEditing(false);
+    setFormServerErrors([]);
     setViewMode('form');
   };
 
   const handleEditRow = (customer) => {
     setSelectedCustomer(customer);
     setIsEditing(true);
+    setFormServerErrors([]);
     setViewMode('form');
   };
 
   const handleEnableEdit = () => {
     setIsEditing(true);
+    setFormServerErrors([]);
   };
 
   const handleDelete = async (customer) => {
     const target = customer || selectedCustomer;
     if (!target) return;
     if (window.confirm(`Are you sure you want to delete ${target.name}?`)) {
-      await apiService.delete('partner', target.id);
-      setViewMode('list');
-      setSelectedCustomer(null);
-      setRefreshKey((k) => k + 1);
+      setFormServerErrors([]);
+      try {
+        await apiService.delete('partner', target.id);
+        setViewMode('list');
+        setSelectedCustomer(null);
+        setRefreshKey((k) => k + 1);
+      } catch (err) {
+        console.error('Error deleting customer:', err);
+        const errList = err?.errors || err?.response?.data?.errors || [{ field: 'id', message: err?.message || 'Deletion failed.' }];
+        setFormServerErrors(errList);
+        const firstMsg = errList[0]?.message || err?.message || 'Deletion failed.';
+        alert(firstMsg);
+      }
     }
   };
 
   const handleDiscard = () => {
+    setFormServerErrors([]);
     if (selectedCustomer) {
       setIsEditing(false);
     } else {
@@ -119,10 +135,12 @@ export const CustomerList = () => {
     setViewMode('list');
     setSelectedCustomer(null);
     setIsEditing(false);
+    setFormServerErrors([]);
   };
 
   const handleSubmit = async (formData, { setServerErrors } = {}) => {
     setSaving(true);
+    setFormServerErrors([]);
     try {
       if (selectedCustomer) {
         const updated = await apiService.update('partner', selectedCustomer.id, formData);
@@ -137,10 +155,11 @@ export const CustomerList = () => {
       setRefreshKey((k) => k + 1);
     } catch (err) {
       console.error('Error saving customer:', err);
-      if (err.errors && setServerErrors) {
-        setServerErrors(err.errors);
-      } else {
-        alert(err.message || 'Failed to save customer record.');
+      const errList = err?.errors || err?.response?.data?.errors;
+      if (errList && setServerErrors) {
+        setServerErrors(errList);
+      } else if (errList) {
+        setFormServerErrors(errList);
       }
     } finally {
       setSaving(false);
@@ -167,6 +186,7 @@ export const CustomerList = () => {
           title={selectedCustomer ? selectedCustomer.name || 'Customer Details' : 'New Customer'}
           fields={customerFields}
           initialValues={selectedCustomer || {}}
+          serverErrors={formServerErrors}
           readOnly={!isEditing}
           onEdit={handleEnableEdit}
           onNew={handleNew}

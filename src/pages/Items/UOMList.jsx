@@ -33,40 +33,56 @@ export const UOMList = () => {
     }
   ];
 
+  const [formServerErrors, setFormServerErrors] = useState([]);
+
   const handleNew = () => {
     setSelectedUom(null);
     setIsEditing(true);
+    setFormServerErrors([]);
     setViewMode('form');
   };
 
   const handleRowClick = (row) => {
     setSelectedUom(row);
     setIsEditing(false);
+    setFormServerErrors([]);
     setViewMode('form');
   };
 
   const handleEditRow = (row) => {
     setSelectedUom(row);
     setIsEditing(true);
+    setFormServerErrors([]);
     setViewMode('form');
   };
 
   const handleEnableEdit = () => {
     setIsEditing(true);
+    setFormServerErrors([]);
   };
 
   const handleDelete = async (row) => {
     const target = row || selectedUom;
     if (!target) return;
     if (window.confirm(`Are you sure you want to delete UOM ${target.name}?`)) {
-      await apiService.delete('uom', target.id);
-      setViewMode('list');
-      setSelectedUom(null);
-      setRefreshKey((k) => k + 1);
+      setFormServerErrors([]);
+      try {
+        await apiService.delete('uom', target.id);
+        setViewMode('list');
+        setSelectedUom(null);
+        setRefreshKey((k) => k + 1);
+      } catch (err) {
+        console.error('Error deleting UOM:', err);
+        const errList = err?.errors || err?.response?.data?.errors || [{ field: 'id', message: err?.message || 'Deletion failed.' }];
+        setFormServerErrors(errList);
+        const firstMsg = errList[0]?.message || err?.message || 'Deletion failed.';
+        alert(firstMsg);
+      }
     }
   };
 
   const handleDiscard = () => {
+    setFormServerErrors([]);
     if (selectedUom) {
       setIsEditing(false);
     } else {
@@ -78,10 +94,12 @@ export const UOMList = () => {
     setViewMode('list');
     setSelectedUom(null);
     setIsEditing(false);
+    setFormServerErrors([]);
   };
 
   const handleSubmit = async (formData, { setServerErrors } = {}) => {
     setSaving(true);
+    setFormServerErrors([]);
     try {
       if (selectedUom) {
         const updated = await apiService.update('uom', selectedUom.id, formData);
@@ -96,10 +114,11 @@ export const UOMList = () => {
       setRefreshKey((k) => k + 1);
     } catch (err) {
       console.error('Error saving UOM:', err);
-      if (err.errors && setServerErrors) {
-        setServerErrors(err.errors);
-      } else {
-        alert(err.message || 'Failed to save UOM.');
+      const errList = err?.errors || err?.response?.data?.errors;
+      if (errList && setServerErrors) {
+        setServerErrors(errList);
+      } else if (errList) {
+        setFormServerErrors(errList);
       }
     } finally {
       setSaving(false);
@@ -126,6 +145,7 @@ export const UOMList = () => {
           title={selectedUom ? selectedUom.name || 'UOM Details' : 'New Unit of Measurement'}
           fields={uomFields}
           initialValues={selectedUom || {}}
+          serverErrors={formServerErrors}
           readOnly={!isEditing}
           onEdit={handleEnableEdit}
           onNew={handleNew}

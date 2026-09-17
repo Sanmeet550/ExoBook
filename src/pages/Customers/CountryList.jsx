@@ -49,40 +49,56 @@ export const CountryList = () => {
     }
   };
 
+  const [formServerErrors, setFormServerErrors] = useState([]);
+
   const handleNew = () => {
     setSelectedCountry(null);
     setIsEditing(true);
+    setFormServerErrors([]);
     setViewMode('form');
   };
 
   const handleRowClick = (country) => {
     setSelectedCountry(country);
     setIsEditing(false);
+    setFormServerErrors([]);
     setViewMode('form');
   };
 
   const handleEditRow = (country) => {
     setSelectedCountry(country);
     setIsEditing(true);
+    setFormServerErrors([]);
     setViewMode('form');
   };
 
   const handleEnableEdit = () => {
     setIsEditing(true);
+    setFormServerErrors([]);
   };
 
   const handleDelete = async (row) => {
     const target = row || selectedCountry;
     if (!target) return;
     if (window.confirm(`Are you sure you want to delete ${target.name}?`)) {
-      await apiService.delete('country', target.id);
-      setViewMode('list');
-      setSelectedCountry(null);
-      setRefreshKey((k) => k + 1);
+      setFormServerErrors([]);
+      try {
+        await apiService.delete('country', target.id);
+        setViewMode('list');
+        setSelectedCountry(null);
+        setRefreshKey((k) => k + 1);
+      } catch (err) {
+        console.error('Error deleting country:', err);
+        const errList = err?.errors || err?.response?.data?.errors || [{ field: 'id', message: err?.message || 'Deletion failed.' }];
+        setFormServerErrors(errList);
+        const firstMsg = errList[0]?.message || err?.message || 'Deletion failed.';
+        alert(firstMsg);
+      }
     }
   };
 
   const handleDiscard = () => {
+    setFormServerErrors([]);
     if (selectedCountry) {
       setIsEditing(false);
     } else {
@@ -94,10 +110,12 @@ export const CountryList = () => {
     setViewMode('list');
     setSelectedCountry(null);
     setIsEditing(false);
+    setFormServerErrors([]);
   };
 
   const handleSubmit = async (formData, { setServerErrors } = {}) => {
     setSaving(true);
+    setFormServerErrors([]);
     try {
       if (selectedCountry) {
         const updated = await apiService.update('country', selectedCountry.id, formData);
@@ -106,18 +124,17 @@ export const CountryList = () => {
       } else {
         const created = await apiService.create('country', formData);
         const newRecord = (created && created.id) ? created : { ...formData };
-        console.log(newRecord,'New Record')
-        console.log(created, 'Created')
         setSelectedCountry(newRecord);
       }
       setIsEditing(false);
       setRefreshKey((k) => k + 1);
     } catch (err) {
       console.error('Error saving country:', err);
-      if (err.errors && setServerErrors) {
-        setServerErrors(err.errors);
-      } else {
-        alert(err.message || 'Failed to save country record.');
+      const errList = err?.errors || err?.response?.data?.errors;
+      if (errList && setServerErrors) {
+        setServerErrors(errList);
+      } else if (errList) {
+        setFormServerErrors(errList);
       }
     } finally {
       setSaving(false);
@@ -144,6 +161,7 @@ export const CountryList = () => {
           title={selectedCountry ? selectedCountry.name || 'Country Details' : 'New Country'}
           fields={countryFields}
           initialValues={selectedCountry || {}}
+          serverErrors={formServerErrors}
           readOnly={!isEditing}
           onEdit={handleEnableEdit}
           onNew={handleNew}

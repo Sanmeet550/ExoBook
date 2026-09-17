@@ -92,40 +92,56 @@ export const ItemList = () => {
     }
   };
 
+  const [formServerErrors, setFormServerErrors] = useState([]);
+
   const handleNew = () => {
     setSelectedItem(null);
     setIsEditing(true);
+    setFormServerErrors([]);
     setViewMode('form');
   };
 
   const handleRowClick = (item) => {
     setSelectedItem(item);
     setIsEditing(false);
+    setFormServerErrors([]);
     setViewMode('form');
   };
 
   const handleEditRow = (item) => {
     setSelectedItem(item);
     setIsEditing(true);
+    setFormServerErrors([]);
     setViewMode('form');
   };
 
   const handleEnableEdit = () => {
     setIsEditing(true);
+    setFormServerErrors([]);
   };
 
   const handleDelete = async (row) => {
     const target = row || selectedItem;
     if (!target) return;
     if (window.confirm(`Are you sure you want to delete item ${target.name}?`)) {
-      await apiService.delete('items', target.id);
-      setViewMode('list');
-      setSelectedItem(null);
-      setRefreshKey((k) => k + 1);
+      setFormServerErrors([]);
+      try {
+        await apiService.delete('product', target.id);
+        setViewMode('list');
+        setSelectedItem(null);
+        setRefreshKey((k) => k + 1);
+      } catch (err) {
+        console.error('Error deleting item:', err);
+        const errList = err?.errors || err?.response?.data?.errors || [{ field: 'id', message: err?.message || 'Deletion failed.' }];
+        setFormServerErrors(errList);
+        const firstMsg = errList[0]?.message || err?.message || 'Deletion failed.';
+        alert(firstMsg);
+      }
     }
   };
 
   const handleDiscard = () => {
+    setFormServerErrors([]);
     if (selectedItem) {
       setIsEditing(false);
     } else {
@@ -137,15 +153,16 @@ export const ItemList = () => {
     setViewMode('list');
     setSelectedItem(null);
     setIsEditing(false);
+    setFormServerErrors([]);
   };
 
   const handleSubmit = async (formData, { setServerErrors } = {}) => {
     setSaving(true);
+    setFormServerErrors([]);
     try {
       if (selectedItem) {
         const updated = await apiService.update('product', selectedItem.id, formData);
         const updatedRecord = (updated && updated.id) ? updated : { ...selectedItem, ...formData };
-        console.log(updatedRecord);
         setSelectedItem(updatedRecord);
       } else {
         const created = await apiService.create('product', formData);
@@ -156,10 +173,11 @@ export const ItemList = () => {
       setRefreshKey((k) => k + 1);
     } catch (err) {
       console.error('Error saving item:', err);
-      if (err.errors && setServerErrors) {
-        setServerErrors(err.errors);
-      } else {
-        alert(err.message || 'Failed to save item.');
+      const errList = err?.errors || err?.response?.data?.errors;
+      if (errList && setServerErrors) {
+        setServerErrors(errList);
+      } else if (errList) {
+        setFormServerErrors(errList);
       }
     } finally {
       setSaving(false);
@@ -186,6 +204,7 @@ export const ItemList = () => {
           title={selectedItem ? selectedItem.name || 'Item Details' : 'New Item'}
           fields={itemFields}
           initialValues={selectedItem || {}}
+          serverErrors={formServerErrors}
           readOnly={!isEditing}
           onEdit={handleEnableEdit}
           onNew={handleNew}

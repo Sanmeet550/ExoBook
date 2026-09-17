@@ -26,40 +26,56 @@ export const ExpenseList = () => {
     { name: 'notes', label: 'Notes / Description', type: 'textarea', gridSpan: 12, placeholder: 'Brief note about this expense...' }
   ];
 
+  const [formServerErrors, setFormServerErrors] = useState([]);
+
   const handleNew = () => {
     setSelectedExpense(null);
     setIsEditing(true);
+    setFormServerErrors([]);
     setViewMode('form');
   };
 
   const handleRowClick = (row) => {
     setSelectedExpense(row);
     setIsEditing(false);
+    setFormServerErrors([]);
     setViewMode('form');
   };
 
   const handleEditRow = (row) => {
     setSelectedExpense(row);
     setIsEditing(true);
+    setFormServerErrors([]);
     setViewMode('form');
   };
 
   const handleEnableEdit = () => {
     setIsEditing(true);
+    setFormServerErrors([]);
   };
 
   const handleDelete = async (row) => {
     const target = row || selectedExpense;
     if (!target) return;
     if (window.confirm(`Are you sure you want to delete expense ${target.expenseNo}?`)) {
-      await apiService.delete('expenses', target.id);
-      setViewMode('list');
-      setSelectedExpense(null);
-      setRefreshKey((k) => k + 1);
+      setFormServerErrors([]);
+      try {
+        await apiService.delete('expenses', target.id);
+        setViewMode('list');
+        setSelectedExpense(null);
+        setRefreshKey((k) => k + 1);
+      } catch (err) {
+        console.error('Error deleting expense:', err);
+        const errList = err?.errors || err?.response?.data?.errors || [{ field: 'id', message: err?.message || 'Deletion failed.' }];
+        setFormServerErrors(errList);
+        const firstMsg = errList[0]?.message || err?.message || 'Deletion failed.';
+        alert(firstMsg);
+      }
     }
   };
 
   const handleDiscard = () => {
+    setFormServerErrors([]);
     if (selectedExpense) {
       setIsEditing(false);
     } else {
@@ -71,10 +87,12 @@ export const ExpenseList = () => {
     setViewMode('list');
     setSelectedExpense(null);
     setIsEditing(false);
+    setFormServerErrors([]);
   };
 
   const handleSubmit = async (formData, { setServerErrors } = {}) => {
     setSaving(true);
+    setFormServerErrors([]);
     try {
       if (selectedExpense) {
         const updated = await apiService.update('expenses', selectedExpense.id, formData);
@@ -89,10 +107,11 @@ export const ExpenseList = () => {
       setRefreshKey((k) => k + 1);
     } catch (err) {
       console.error('Error saving expense:', err);
-      if (err.errors && setServerErrors) {
-        setServerErrors(err.errors);
-      } else {
-        alert(err.message || 'Failed to save expense entry.');
+      const errList = err?.errors || err?.response?.data?.errors;
+      if (errList && setServerErrors) {
+        setServerErrors(errList);
+      } else if (errList) {
+        setFormServerErrors(errList);
       }
     } finally {
       setSaving(false);
@@ -119,6 +138,7 @@ export const ExpenseList = () => {
           title={selectedExpense ? selectedExpense.expenseNo || 'Expense Entry Details' : 'Record Expense Entry'}
           fields={expenseFields}
           initialValues={selectedExpense || { date: new Date().toISOString().split('T')[0] }}
+          serverErrors={formServerErrors}
           readOnly={!isEditing}
           onEdit={handleEnableEdit}
           onNew={handleNew}
