@@ -139,13 +139,13 @@ export const ItemList = () => {
     setIsEditing(false);
   };
 
-  const handleSubmit = async (formData) => {
+  const handleSubmit = async (formData, { setServerErrors } = {}) => {
     setSaving(true);
     try {
       if (selectedItem) {
         const updated = await apiService.update('product', selectedItem.id, formData);
         const updatedRecord = (updated && updated.id) ? updated : { ...selectedItem, ...formData };
-        console.log(updatedRecord)
+        console.log(updatedRecord);
         setSelectedItem(updatedRecord);
       } else {
         const created = await apiService.create('product', formData);
@@ -156,7 +156,11 @@ export const ItemList = () => {
       setRefreshKey((k) => k + 1);
     } catch (err) {
       console.error('Error saving item:', err);
-      alert(err.message || 'Failed to save item.');
+      if (err.errors && setServerErrors) {
+        setServerErrors(err.errors);
+      } else {
+        alert(err.message || 'Failed to save item.');
+      }
     } finally {
       setSaving(false);
     }

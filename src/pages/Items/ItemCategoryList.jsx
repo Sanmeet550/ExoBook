@@ -68,7 +68,7 @@ export const ItemCategoryList = () => {
     setIsEditing(false);
   };
 
-  const handleSubmit = async (formData) => {
+  const handleSubmit = async (formData, { setServerErrors } = {}) => {
     setSaving(true);
     try {
       if (selectedCategory) {
@@ -84,7 +84,11 @@ export const ItemCategoryList = () => {
       setRefreshKey((k) => k + 1);
     } catch (err) {
       console.error('Error saving category:', err);
-      alert(err.message || 'Failed to save category.');
+      if (err.errors && setServerErrors) {
+        setServerErrors(err.errors);
+      } else {
+        alert(err.message || 'Failed to save category.');
+      }
     } finally {
       setSaving(false);
     }

@@ -81,7 +81,7 @@ export const SalesList = () => {
     setIsEditing(false);
   };
 
-  const handleSubmit = async (formData) => {
+  const handleSubmit = async (formData, { setServerErrors } = {}) => {
     setSaving(true);
     try {
       if (selectedSale) {
@@ -97,7 +97,11 @@ export const SalesList = () => {
       setRefreshKey((k) => k + 1);
     } catch (err) {
       console.error('Error saving sales invoice:', err);
-      alert(err.message || 'Failed to save sales invoice.');
+      if (err.errors && setServerErrors) {
+        setServerErrors(err.errors);
+      } else {
+        alert(err.message || 'Failed to save sales invoice.');
+      }
     } finally {
       setSaving(false);
     }

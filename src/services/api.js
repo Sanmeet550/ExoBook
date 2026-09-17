@@ -46,7 +46,10 @@ http.interceptors.response.use(
       error?.response?.data?.detail ||
       error?.message ||
       'An unexpected error occurred.';
-    return Promise.reject(new Error(message));
+    const customError = new Error(message);
+    customError.response = error?.response;
+    customError.errors = error?.response?.data?.errors;
+    return Promise.reject(customError);
   }
 );
 
@@ -86,8 +89,9 @@ export const apiService = {
    * DELETE /{resource}/delete/{id}
    */
   delete: (resource, id) => {
+    console.log(`/${resource}/delete`)
     const paramName = `${resource}_id`;
-    return http.delete(`/${resource}/delete`, { params: { [paramName]: id } });
+    return http.delete(`/${resource}/delete/${id}`);
   },
 
   /**

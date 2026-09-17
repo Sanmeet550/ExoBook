@@ -44,10 +44,10 @@ export const CustomerList = () => {
   ];
 
   const customerFields = [
-    { name: 'name', label: 'Customer Name', type: 'text', required: true, gridSpan: 6, placeholder: 'e.g. ABC Store' },
-    { name: 'phone', label: 'Phone Number', type: 'text', required: true, gridSpan: 6, placeholder: 'e.g. 9876543210' },
+    { name: 'name', label: 'Customer Name', type: 'text', gridSpan: 6, placeholder: 'e.g. ABC Store' },
+    { name: 'phone', label: 'Phone Number', type: 'text', gridSpan: 6, placeholder: 'e.g. 9876543210' },
     { name: 'email', label: 'Email Address', type: 'email', gridSpan: 6, placeholder: 'e.g. info@abc.com' },
-    { name: 'country_id', label: 'Country', type: 'select', options: countries, required: true, gridSpan: 6, optionLabel: 'name', optionValue: 'id' },
+    { name: 'country_id', label: 'Country', type: 'select', options: countries, gridSpan: 6, optionLabel: 'name', optionValue: 'id' },
     { name: 'state_id', label: 'State', type: 'select', options: states, gridSpan: 6, optionLabel: 'name', optionValue: 'id' }
   ];
 
@@ -121,7 +121,7 @@ export const CustomerList = () => {
     setIsEditing(false);
   };
 
-  const handleSubmit = async (formData) => {
+  const handleSubmit = async (formData, { setServerErrors } = {}) => {
     setSaving(true);
     try {
       if (selectedCustomer) {
@@ -137,7 +137,11 @@ export const CustomerList = () => {
       setRefreshKey((k) => k + 1);
     } catch (err) {
       console.error('Error saving customer:', err);
-      alert(err.message || 'Failed to save customer record.');
+      if (err.errors && setServerErrors) {
+        setServerErrors(err.errors);
+      } else {
+        alert(err.message || 'Failed to save customer record.');
+      }
     } finally {
       setSaving(false);
     }

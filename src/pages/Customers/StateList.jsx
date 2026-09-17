@@ -29,9 +29,9 @@ export const StateList = () => {
   ];
 
   const stateFields = [
-    { name: 'name', label: 'State Name', type: 'text', required: true, gridSpan: 6, placeholder: 'e.g. Maharashtra' },
-    { name: 'code', label: 'State Code', type: 'text', required: true, gridSpan: 6, placeholder: 'e.g. MH' },
-    { name: 'country_id', label: 'Country', type: 'select', options: countries, required: true, gridSpan: 12, optionLabel: 'name', optionValue: 'id' }
+    { name: 'name', label: 'State Name', type: 'text', gridSpan: 6, placeholder: 'e.g. Maharashtra' },
+    { name: 'code', label: 'State Code', type: 'text', gridSpan: 6, placeholder: 'e.g. MH' },
+    { name: 'country_id', label: 'Country', type: 'select', options: countries, gridSpan: 12, optionLabel: 'name', optionValue: 'id' }
   ];
 
   useEffect(() => {
@@ -73,7 +73,7 @@ export const StateList = () => {
     const target = stateRow || selectedState;
     if (!target) return;
     if (window.confirm(`Are you sure you want to delete state ${target.name}?`)) {
-      await apiService.delete('states', target.id);
+      await apiService.delete('state', target.id);
       setViewMode('list');
       setSelectedState(null);
       setRefreshKey((k) => k + 1);
@@ -94,7 +94,7 @@ export const StateList = () => {
     setIsEditing(false);
   };
 
-  const handleSubmit = async (formData) => {
+  const handleSubmit = async (formData, { setServerErrors } = {}) => {
     setSaving(true);
     try {
       if (selectedState) {
@@ -110,7 +110,11 @@ export const StateList = () => {
       setRefreshKey((k) => k + 1);
     } catch (err) {
       console.error('Error saving state:', err);
-      alert(err.message || 'Failed to save state record.');
+      if (err.errors && setServerErrors) {
+        setServerErrors(err.errors);
+      } else {
+        alert(err.message || 'Failed to save state record.');
+      }
     } finally {
       setSaving(false);
     }

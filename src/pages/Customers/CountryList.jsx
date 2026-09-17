@@ -96,7 +96,7 @@ export const CountryList = () => {
     setIsEditing(false);
   };
 
-  const handleSubmit = async (formData) => {
+  const handleSubmit = async (formData, { setServerErrors } = {}) => {
     setSaving(true);
     try {
       if (selectedCountry) {
@@ -106,13 +106,19 @@ export const CountryList = () => {
       } else {
         const created = await apiService.create('country', formData);
         const newRecord = (created && created.id) ? created : { ...formData };
+        console.log(newRecord,'New Record')
+        console.log(created, 'Created')
         setSelectedCountry(newRecord);
       }
       setIsEditing(false);
       setRefreshKey((k) => k + 1);
     } catch (err) {
       console.error('Error saving country:', err);
-      alert(err.message || 'Failed to save country record.');
+      if (err.errors && setServerErrors) {
+        setServerErrors(err.errors);
+      } else {
+        alert(err.message || 'Failed to save country record.');
+      }
     } finally {
       setSaving(false);
     }

@@ -53,3 +53,39 @@
   display: flex;
   justify-content: flex-end;
 }
+
+/* ── Error summary banner ─────────────────────────────────────── */
+.form-error-summary {
+  background-color: #fff5f5;
+  border: 1px solid #fca5a5;
+  border-left: 4px solid var(--danger);
+  border-radius: var(--radius);
+  padding: 0.875rem 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.form-error-summary-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #b91c1c;
+  margin-bottom: 0.5rem;
+}
+
+.form-error-summary-list {
+  margin: 0;
+  padding-left: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.form-error-summary-list li {
+  font-size: 0.8125rem;
+  color: #dc2626;
+  list-style: disc;
+}
+
+.form-error-summary-list li strong {
+  color: #b91c1c;
+  font-weight: 600;
+}

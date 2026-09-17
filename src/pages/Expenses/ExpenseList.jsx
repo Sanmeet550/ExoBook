@@ -73,7 +73,7 @@ export const ExpenseList = () => {
     setIsEditing(false);
   };
 
-  const handleSubmit = async (formData) => {
+  const handleSubmit = async (formData, { setServerErrors } = {}) => {
     setSaving(true);
     try {
       if (selectedExpense) {
@@ -89,7 +89,11 @@ export const ExpenseList = () => {
       setRefreshKey((k) => k + 1);
     } catch (err) {
       console.error('Error saving expense:', err);
-      alert(err.message || 'Failed to save expense entry.');
+      if (err.errors && setServerErrors) {
+        setServerErrors(err.errors);
+      } else {
+        alert(err.message || 'Failed to save expense entry.');
+      }
     } finally {
       setSaving(false);
     }

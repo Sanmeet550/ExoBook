@@ -80,7 +80,7 @@ export const UOMList = () => {
     setIsEditing(false);
   };
 
-  const handleSubmit = async (formData) => {
+  const handleSubmit = async (formData, { setServerErrors } = {}) => {
     setSaving(true);
     try {
       if (selectedUom) {
@@ -96,7 +96,11 @@ export const UOMList = () => {
       setRefreshKey((k) => k + 1);
     } catch (err) {
       console.error('Error saving UOM:', err);
-      alert(err.message || 'Failed to save UOM.');
+      if (err.errors && setServerErrors) {
+        setServerErrors(err.errors);
+      } else {
+        alert(err.message || 'Failed to save UOM.');
+      }
     } finally {
       setSaving(false);
     }
